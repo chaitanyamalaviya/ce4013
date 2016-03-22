@@ -24,9 +24,11 @@ public class Server {
 				DatagramPacket request= new DatagramPacket(buffer, buffer.length);
 				aSocket.receive(request); //blocked if no input
 				Server ob = unmarshal(buffer);
-				
-				if (ob.type == "R" || ob.type == "r")
+			    System.out.println(ob.type);
+				if (ob.type.compareTo("R") == 0)
 					ob.result = getFileData(ob);
+			    System.out.println(ob.result);
+			    
 				byte[] res = ob.result.getBytes();
 				DatagramPacket reply = new DatagramPacket(res, res.length, request.getAddress(), request.getPort()); //to reply, send back to the same port
 			    aSocket.send(reply);	
@@ -45,11 +47,11 @@ public class Server {
 	
 	public static String getFileData(Server ob) throws IOException{
 		System.out.println(ob.path);
-		FileReader in = null;
-		char[] bs = new char[ob.length];
+		FileInputStream in = null;
+		byte[] bs = new byte[ob.length];
 		try {
 	 
-	         in = new FileReader(ob.path);
+	         in = new FileInputStream(ob.path);
 	         in.read(bs,ob.length,ob.offset);
 	         String out = new String(bs);
 	         return out;
@@ -58,6 +60,7 @@ public class Server {
 	         if (in != null) {
 	            in.close();
 	         }
+	         System.out.println("Error: IOException thrown in getFileData");
 	      }
 	}
 	   
@@ -104,12 +107,13 @@ public class Server {
 	    Server ob =  new Server();
 
 	    ob.length = Integer.parseInt(true_request.substring(0,4));
-	    ob.path = true_request.substring(4,ob.length+5);
+	    ob.path = true_request.substring(4,ob.length+4);
         System.out.println(ob.path);
-	    ob.type = true_request.substring(ob.length+5,ob.length+6);
+	    ob.type = true_request.substring(ob.length+4,ob.length+5);
 	    ob.offset = Integer.parseInt(true_request.substring(ob.length+5,ob.length+9));
-	    ob.length = Integer.parseInt(true_request.substring(ob.length+10,ob.length+14));
-		return ob;
+	    ob.length = Integer.parseInt(true_request.substring(ob.length+9,ob.length+13));
+	    System.out.println(ob.length);
+	    return ob;
 	}	   
 	
 }
