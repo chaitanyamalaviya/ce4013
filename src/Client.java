@@ -9,7 +9,7 @@ public class Client{
 	public String type; //type of operation - 'R'/'W'/'D' etc
 	public int offset;
 	public int length;
-	
+	public String data;
 
 	public static void main(String args[]) throws IOException, NotSerializableException {
 		DatagramSocket aSocket = null;
@@ -39,8 +39,10 @@ public class Client{
 			
 			DatagramPacket reply = new DatagramPacket(buffer,buffer.length); //a different constructor 
 			aSocket.receive(reply);
-			System.out.println("File Data: "+ new String(reply.getData()));
-            } 
+			//System.out.println("File Data: "+ new String(reply.getData()));
+			System.out.println("File Data: "+ buffer);
+
+		} 
 		finally 
 		{
 			if (aSocket != null) 
