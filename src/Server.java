@@ -61,6 +61,33 @@ public class Server {
 	      }
 	}
 	   
+	public static boolean writeData(Server ob) throws IOException{
+		return true;
+		
+	}
+	
+	public static boolean addMonitorClient(){  //Add monitoring client entry to the dictionary
+		return true;
+	}
+	
+	public static boolean removeMonitorClient(){  //Remove monitoring client entry upon expiry of its monitor interval
+		return true;
+	}
+	
+	
+	public static boolean sendUpdates(File fd){  //Called every time a change is made to the specified file
+		return true;
+	}
+	
+	public static boolean rename(){ //Non-idempotent
+		return true;
+	}
+	
+	public static boolean delete(){ //Idempotent
+		return true;
+	}
+	
+	
 	public static Server unmarshal(byte[] request)
 	{
 	    String req = Arrays.toString(request); // In form [48,34,...]
