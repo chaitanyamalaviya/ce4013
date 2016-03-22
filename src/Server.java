@@ -48,20 +48,26 @@ public class Server {
 	public static String getFileData(Server ob) throws IOException{
 		System.out.println(ob.path);
 		FileInputStream in = null;
-		byte[] bs = new byte[ob.length];
+		byte[] bs = new byte[100];
 		try {
 	 
 	         in = new FileInputStream(ob.path);
-	         in.read(bs,ob.length,ob.offset);
+	         in.read(bs,ob.offset,ob.length);
 	         String out = new String(bs);
 	         return out;
 	         
-		}finally {
-	         if (in != null) {
-	            in.close();
-	         }
-	         System.out.println("Error: IOException thrown in getFileData");
-	      }
+		}
+		catch(Exception e)
+		{
+			System.out.println("Error: IOException thrown in getFileData");
+			System.out.println(e.getMessage());
+		}
+
+        if (in != null) {
+           in.close();
+        }
+		
+		return "";
 	}
 	   
 	public static boolean writeData(Server ob) throws IOException{
