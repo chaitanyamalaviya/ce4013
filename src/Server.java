@@ -48,7 +48,8 @@ public class Server {
 	public static String getFileData(Server ob) throws IOException{
 		System.out.println(ob.path);
 		FileInputStream in = null;
-		byte[] bs = new byte[100];
+		int size = ob.length;
+		byte[] bs = new byte[size];
 		try {
 	 
 	         in = new FileInputStream(ob.path);
