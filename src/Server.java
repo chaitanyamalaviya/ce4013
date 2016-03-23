@@ -111,7 +111,17 @@ public class Server {
 		try {
 			out = new RandomAccessFile(ob.path, "rw");
 			out.seek(ob.offset);
+			
+			int size = (int) (long) (out.length());
+			size = size - ob.offset;
+			byte[] bs = new byte[size]; 
+			out.read(bs);
+			
+			out.seek(ob.offset);
 			out.write(ob.data.getBytes());
+			
+			out.write(bs);
+			
 			return true;
 		} catch (Exception e) {
 
@@ -152,30 +162,34 @@ public class Server {
 			String name = fs.toPath().getFileName().toString();
 			int pos = name.lastIndexOf(".");
 			String ext;
-			System.out.println(name);
-			name = name.substring(0, pos);
 			ext = name.substring(pos);
-			
-			System.out.println(ext);
+			name = name.substring(0, pos);
+
 			Path loc = destDir.resolve(name + ext);
 			File fd = loc.toFile();
-			int i = 1;
-
-			while (!fd.exists()) {
+			int i = 0;
+			System.out.println(loc.toString());
+			while (fd.exists()) {
+				
+				i++;
 				loc = destDir.resolve(name + "-copy-" + i + ext);
 				fd = loc.toFile();
 				if (!fd.exists()) {
 					Files.copy(fs.toPath(), loc);
 					return i;
 				}
-				i++;
+				
 			}
-
+			Files.copy(fs.toPath(), loc);
+			return i;
+			
+			
 		} catch (Exception e) {
 			System.out.println("File doesn't exist!");
 			System.out.println(e.getMessage());
+			return -1;
 		}
-		return -1;
+		
 	}
 
 	public static boolean delete(Server ob) throws IOException { // Idempotent
