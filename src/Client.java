@@ -77,7 +77,6 @@ public class Client {
 				return;
 			}
 
-			ob.path = "/home/ashwin/Academics/Distributed-Computing/ce4013/TestFile.txt";
 			
 			try {
 				aSocket = new DatagramSocket();
