@@ -78,37 +78,36 @@ public class Server {
 	public static String getFileData(Server ob) throws IOException {
 
 		System.out.println(ob.path);
-
-		FileInputStream in = null;
 		int size = ob.length;
 		byte[] bs = new byte[size];
-//		try {
 
-			in = new FileInputStream(ob.path);
-			System.out.println(ob.offset);
-			System.out.println(ob.length);
-			in.read(bs, ob.offset, ob.length);
+
+		RandomAccessFile in = null;
+		try {
+			in = new RandomAccessFile(ob.path, "rw");
+			in.seek(ob.offset);
+			in.read(bs);
+
 			String out = new String(bs);
 			return out;
 
-//		}
+		}
 
-//		catch (Exception e) {
-//			System.out.println("Error: IOException thrown in getFileData");
-//			System.out.println(e.getMessage());
-//		}
+		catch (Exception e) {
+			System.out.println("Error: IOException thrown in getFileData");
+			System.out.println(e.getMessage());
+		}
 
-//		if (in != null) {
-//			in.close();
-//		}
-//
-//		return "";
+		if (in != null) {
+			in.close();
+		}
+
+		return "";
 	}
 
 	public static boolean writeData(Server ob) throws IOException {
 
 		RandomAccessFile out = null;
-		;
 		try {
 			out = new RandomAccessFile(ob.path, "rw");
 			out.seek(ob.offset);
@@ -147,7 +146,7 @@ public class Server {
 
 	public static int copy(Server ob) throws IOException { // Non-idempotent
 
-//		try {
+		try {
 			File fs = new File(ob.path);
 			Path destDir = Paths.get(ob.destPath);
 			String name = fs.toPath().getFileName().toString();
@@ -172,10 +171,10 @@ public class Server {
 				i++;
 			}
 
-//		} catch (Exception e) {
-//			System.out.println("File doesn't exist!");
-//			System.out.println(e.getMessage());
-//		}
+		} catch (Exception e) {
+			System.out.println("File doesn't exist!");
+			System.out.println(e.getMessage());
+		}
 		return -1;
 	}
 
@@ -227,7 +226,6 @@ public class Server {
 					ob.length + 9, ob.length + 13));
 			ob.data = true_request.substring(ob.length + 13, ob.length + 13
 					+ dataLength);
-			System.out.println(ob.data);
 			break;
 		case "D":
 			break;
