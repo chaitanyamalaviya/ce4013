@@ -12,7 +12,7 @@ public class Server {
 	public boolean writeSucceed;
 	public String result;
 	
-	public static void main(String args[]) throws IOException, ClassNotFoundException, NotSerializableException
+	public static void main(String args[]) throws IOException, ClassNotFoundException
 	{ 
 		DatagramSocket aSocket = null;
 		
@@ -26,6 +26,7 @@ public class Server {
 				aSocket.receive(request); //blocked if no input
 				Server ob = unmarshal(buffer);
 			    System.out.println(ob.type);
+
 			    switch(ob.type.toUpperCase()){
 			    	case "R": ob.result = getFileData(ob);
 			    	break;
@@ -39,7 +40,10 @@ public class Server {
 			    	
 			    
 			    }
-			    
+
+				if (ob.type.compareTo("R") == 0)
+					ob.result = getFileData(ob);
+			    System.out.println(ob.result);   
 				byte[] res = ob.result.getBytes();
 				DatagramPacket reply = new DatagramPacket(res, res.length, request.getAddress(), request.getPort()); //to reply, send back to the same port
 			    aSocket.send(reply);	
@@ -57,6 +61,9 @@ public class Server {
 	
 	
 	public static String getFileData(Server ob) throws IOException{
+
+		System.out.println(ob.path);
+
 		FileInputStream in = null;
 		int size = ob.length;
 		byte[] bs = new byte[size];
@@ -68,7 +75,7 @@ public class Server {
 	         return out;
 	         
 		}
-		
+
 		catch(Exception e)
 		{
 			System.out.println("Error: IOException thrown in getFileData");
@@ -147,11 +154,12 @@ public class Server {
 	    ob.type = true_request.substring(ob.length+4,ob.length+5);
 	    ob.offset = Integer.parseInt(true_request.substring(ob.length+5,ob.length+9));
 	    ob.length = Integer.parseInt(true_request.substring(ob.length+9,ob.length+13));
-	    
+
 	    if (ob.type.compareTo("W")==0){
 	    	int contentLength = Integer.parseInt(true_request.substring(ob.length+13,ob.length+17));
 	    	ob.content = true_request.substring(ob.length+17,ob.length+17+contentLength);
 	    }
+
 	    System.out.println(ob.length);
 	    return ob;
 	}	   
