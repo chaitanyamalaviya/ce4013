@@ -1,6 +1,9 @@
 import java.net.*; 
 import java.util.Arrays;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Server {
 	
@@ -11,6 +14,7 @@ public class Server {
 	public int length;
 	public boolean writeSucceed;
 	public String result;
+	public String destPath;
 	
 	public static void main(String args[]) throws IOException, ClassNotFoundException
 	{ 
@@ -37,7 +41,14 @@ public class Server {
 			    	break;
 			    	case "M": addMonitorClient();
 			    	break;
-			    	
+			    	case "C": ob.result = String.format("%02d", copy(ob));
+			    	break;			
+			    	case "D": if (writeData(ob))
+    							ob.result = "T";
+			    			  else
+			    				ob.result = "F";
+			    	break;
+			    		
 			    
 			    }
 
@@ -99,7 +110,7 @@ public class Server {
 			
 		}
 		catch(Exception e){
-			System.out.println("Error: IOException thrown in getFileData");
+			System.out.println("Error: IOException thrown in writeData");
 			System.out.println(e.getMessage());
 		}
 		
@@ -121,15 +132,55 @@ public class Server {
 	
 	
 	public static boolean sendUpdates(File fd){  //Called every time a change is made to the specified file
+		
 		return true;
 	}
 	
-	public static boolean copy(){ //Non-idempotent
-		return true;
+	public static int copy(Server ob) throws IOException{ //Non-idempotent
+		
+		try{
+			File fs = new File(ob.path);
+			Path destDir = Paths.get(ob.destPath);
+			String name = fs.toPath().getFileName().toString();
+			int pos = name.lastIndexOf(".");
+			String ext = null;
+			if (pos > 0) {
+	    		name = name.substring(0, pos);
+	    		ext = name.substring(pos);
+			}
+			File fd = null;
+			int i = 1;
+			
+			while(!fd.exists()){
+				Path loc = destDir.resolve(name+"copy"+i+ext);
+				fd = loc.toFile();
+				if (!fd.exists()){
+					Files.copy(fs.toPath(),loc);
+					return i;}
+				i++;
+			}
+			
+		}catch(Exception e){
+			System.out.println("File doesn't exist!");
+			System.out.println(e.getMessage());
+		}
+		return -1;
 	}
 	
-	public static boolean delete(){ //Idempotent
-		return true;
+	public static boolean delete(Server ob) throws IOException{ //Idempotent
+		
+		try{
+		File fs = new File(ob.path);
+		if (fs.exists()){
+			Path p = Paths.get(ob.path);
+			Files.deleteIfExists(p);
+		 	return true;}	
+		}
+		catch(Exception e){
+			System.out.println("File doesn't exist!");
+			System.out.println(e.getMessage());
+		}
+		return false;
 	}
 	
 	
