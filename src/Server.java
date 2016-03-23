@@ -50,7 +50,7 @@ public class Server {
 					case "M":
 						addMonitorClient();
 						break;
-					case "C":
+					case "F":
 						ob.result = String.format("%02d", copy(ob));
 						break;
 					case "D":
@@ -63,9 +63,8 @@ public class Server {
 
 				System.out.println(ob.result);
 				byte[] res = ob.result.getBytes();
-				DatagramPacket reply = new DatagramPacket(res, res.length,
-						request.getAddress(), request.getPort()); // t// same //
-																	// port
+				DatagramPacket reply = new DatagramPacket(res, res.length,request.getAddress(), request.getPort()); 
+															
 				aSocket.send(reply);
 			}
 		} finally {
@@ -82,11 +81,13 @@ public class Server {
 		int size = ob.length;
 		byte[] bs = new byte[size];
 
+
 		RandomAccessFile in = null;
 		try {
 			in = new RandomAccessFile(ob.path, "rw");
 			in.seek(ob.offset);
 			in.read(bs);
+
 			String out = new String(bs);
 			return out;
 
@@ -110,7 +111,17 @@ public class Server {
 		try {
 			out = new RandomAccessFile(ob.path, "rw");
 			out.seek(ob.offset);
+			
+			int size = (int) (long) (out.length());
+			size = size - ob.offset;
+			byte[] bs = new byte[size]; 
+			out.read(bs);
+			
+			out.seek(ob.offset);
 			out.write(ob.data.getBytes());
+			
+			out.write(bs);
+			
 			return true;
 		} catch (Exception e) {
 
@@ -150,29 +161,35 @@ public class Server {
 			Path destDir = Paths.get(ob.destPath);
 			String name = fs.toPath().getFileName().toString();
 			int pos = name.lastIndexOf(".");
-			String ext = null;
-			if (pos > 0) {
-				name = name.substring(0, pos);
-				ext = name.substring(pos);
-			}
-			File fd = null;
-			int i = 1;
+			String ext;
+			ext = name.substring(pos);
+			name = name.substring(0, pos);
 
-			while (!fd.exists()) {
-				Path loc = destDir.resolve(name + "copy" + i + ext);
+			Path loc = destDir.resolve(name + ext);
+			File fd = loc.toFile();
+			int i = 0;
+			System.out.println(loc.toString());
+			while (fd.exists()) {
+				
+				i++;
+				loc = destDir.resolve(name + "-copy-" + i + ext);
 				fd = loc.toFile();
 				if (!fd.exists()) {
 					Files.copy(fs.toPath(), loc);
 					return i;
 				}
-				i++;
+				
 			}
-
+			Files.copy(fs.toPath(), loc);
+			return i;
+			
+			
 		} catch (Exception e) {
 			System.out.println("File doesn't exist!");
 			System.out.println(e.getMessage());
+			return -1;
 		}
-		return -1;
+		
 	}
 
 	public static boolean delete(Server ob) throws IOException { // Idempotent

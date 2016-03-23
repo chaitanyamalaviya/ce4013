@@ -129,7 +129,6 @@ public class Client {
 				continue;
 			}
 			
-			
 			try {
 				aSocket = new DatagramSocket();
 				byte[] clientRequest = marshal(ob);
