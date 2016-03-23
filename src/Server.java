@@ -1,4 +1,6 @@
-import java.net.*; 
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.io.*;
 import java.nio.file.Files;
@@ -6,72 +8,75 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class Server {
-	
+
 	public String path;
-	public String type; //type of operation - 'R'/'W'/'D' etc
-	public String content;
+	public String type; // type of operation - 'R'/'W'/'D' etc
 	public int offset;
-	public int length;
+	public int length; // length of path
+	public int monitorInterval;
+	public String data;
+	public String destPath;
+
 	public boolean writeSucceed;
 	public String result;
-	public String destPath;
-	
-	public static void main(String args[]) throws IOException, ClassNotFoundException
-	{ 
+
+	public static void main(String args[]) throws IOException,
+			ClassNotFoundException {
+
 		DatagramSocket aSocket = null;
-		
-		try
-			{
-			aSocket = new DatagramSocket(2222);  //bound to host and port
-			byte[] buffer = new byte[1000]; 
-			while(true){
-				
-				DatagramPacket request= new DatagramPacket(buffer, buffer.length);
-				aSocket.receive(request); //blocked if no input
+
+		try {
+			aSocket = new DatagramSocket(2222); // bound to host and port
+			byte[] buffer = new byte[1000];
+			while (true) {
+
+				DatagramPacket request = new DatagramPacket(buffer,
+						buffer.length);
+				aSocket.receive(request); // blocked if no input
 				Server ob = unmarshal(buffer);
-			    System.out.println(ob.type);
 
-			    switch(ob.type.toUpperCase()){
-			    	case "R": ob.result = getFileData(ob);
-			    	break;
-			    	case "W": if (writeData(ob))
-			    					ob.result = "T";
-			    			  else
-			    					ob.result = "F";
-			    	break;
-			    	case "M": addMonitorClient();
-			    	break;
-			    	case "C": ob.result = String.format("%02d", copy(ob));
-			    	break;			
-			    	case "D": if (writeData(ob))
-    							ob.result = "T";
-			    			  else
-			    				ob.result = "F";
-			    	break;
-			    		
-			    
-			    }
+				System.out.println(ob.type);
 
-				if (ob.type.compareTo("R") == 0)
-					ob.result = getFileData(ob);
-			    System.out.println(ob.result);   
+				switch (ob.type.toUpperCase()) {
+					case "R":
+						ob.result = getFileData(ob);
+						break;
+					case "W":
+						if (writeData(ob))
+							ob.result = "T";
+						else
+							ob.result = "F";
+						break;
+					case "M":
+						addMonitorClient();
+						break;
+					case "C":
+						ob.result = String.format("%02d", copy(ob));
+						break;
+					case "D":
+						if (delete(ob))
+							ob.result = "T";
+						else
+							ob.result = "F";
+						break;
+					}
+
+				System.out.println(ob.result);
 				byte[] res = ob.result.getBytes();
-				DatagramPacket reply = new DatagramPacket(res, res.length, request.getAddress(), request.getPort()); //to reply, send back to the same port
-			    aSocket.send(reply);	
-			    }
+				DatagramPacket reply = new DatagramPacket(res, res.length,
+						request.getAddress(), request.getPort()); // t// same //
+																	// port
+				aSocket.send(reply);
 			}
-		finally 
-		{
-			if (aSocket != null) 
+		} finally {
+			if (aSocket != null)
 				aSocket.close();
 
 		}
 
-	 }
-			
-	
-	
-	public static String getFileData(Server ob) throws IOException{
+	}
+
+	public static String getFileData(Server ob) throws IOException {
 
 		System.out.println(ob.path);
 
@@ -79,140 +84,164 @@ public class Server {
 		int size = ob.length;
 		byte[] bs = new byte[size];
 		try {
-	 
-	         in = new FileInputStream(ob.path);
-	         in.read(bs,ob.offset,ob.length);
-	         String out = new String(bs);
-	         return out;
-	         
+
+			in = new FileInputStream(ob.path);
+			in.read(bs, ob.offset, ob.length);
+			String out = new String(bs);
+			return out;
+
 		}
 
-		catch(Exception e)
-		{
+		catch (Exception e) {
 			System.out.println("Error: IOException thrown in getFileData");
 			System.out.println(e.getMessage());
 		}
 
-        if (in != null) {
-           in.close();
-        }
-		
+		if (in != null) {
+			in.close();
+		}
+
 		return "";
 	}
-	   
-	public static boolean writeData(Server ob) throws IOException{
-		
-		FileOutputStream out = null;
-		try{
-			out = new FileOutputStream(ob.path);
-			out.write(ob.content.getBytes(),ob.offset,ob.length);
+
+	public static boolean writeData(Server ob) throws IOException {
+
+		RandomAccessFile out = null;
+		;
+		try {
+			out = new RandomAccessFile(ob.path, "rw");
+			out.seek(ob.offset);
+			out.write(ob.data.getBytes());
 			return true;
-			
-		}
-		catch(Exception e){
+		} catch (Exception e) {
+
 			System.out.println("Error: IOException thrown in writeData");
 			System.out.println(e.getMessage());
 		}
-		
+
 		if (out != null) {
-           out.close();      
+			out.close();
 		}
-		
-		return false;	
+
+		return false;
 	}
-	
-	
-	public static boolean addMonitorClient(){  //Add monitoring client entry to the dictionary
+
+	public static boolean addMonitorClient() { // Add monitoring client entry to
+												// the dictionary
 		return true;
 	}
-	
-	public static boolean removeMonitorClient(){  //Remove monitoring client entry upon expiry of its monitor interval
+
+	public static boolean removeMonitorClient() { // Remove monitoring client
+													// entry upon expiry of its
+													// monitor interval
 		return true;
 	}
-	
-	
-	public static boolean sendUpdates(File fd){  //Called every time a change is made to the specified file
-		
+
+	public static boolean sendUpdates(File fd) { // Called every time a change
+													// is made to the specified
+													// file
+
 		return true;
 	}
-	
-	public static int copy(Server ob) throws IOException{ //Non-idempotent
-		
-		try{
+
+	public static int copy(Server ob) throws IOException { // Non-idempotent
+
+		try {
 			File fs = new File(ob.path);
 			Path destDir = Paths.get(ob.destPath);
 			String name = fs.toPath().getFileName().toString();
 			int pos = name.lastIndexOf(".");
 			String ext = null;
 			if (pos > 0) {
-	    		name = name.substring(0, pos);
-	    		ext = name.substring(pos);
+				name = name.substring(0, pos);
+				ext = name.substring(pos);
 			}
 			File fd = null;
 			int i = 1;
-			
-			while(!fd.exists()){
-				Path loc = destDir.resolve(name+"copy"+i+ext);
+
+			while (!fd.exists()) {
+				Path loc = destDir.resolve(name + "copy" + i + ext);
 				fd = loc.toFile();
-				if (!fd.exists()){
-					Files.copy(fs.toPath(),loc);
-					return i;}
+				if (!fd.exists()) {
+					Files.copy(fs.toPath(), loc);
+					return i;
+				}
 				i++;
 			}
-			
-		}catch(Exception e){
+
+		} catch (Exception e) {
 			System.out.println("File doesn't exist!");
 			System.out.println(e.getMessage());
 		}
 		return -1;
 	}
-	
-	public static boolean delete(Server ob) throws IOException{ //Idempotent
-		
-		try{
-		File fs = new File(ob.path);
-		if (fs.exists()){
-			Path p = Paths.get(ob.path);
-			Files.deleteIfExists(p);
-		 	return true;}	
-		}
-		catch(Exception e){
+
+	public static boolean delete(Server ob) throws IOException { // Idempotent
+
+		try {
+			File fs = new File(ob.path);
+			if (fs.exists()) {
+				Path p = Paths.get(ob.path);
+				Files.deleteIfExists(p);
+				return true;
+			}
+		} catch (Exception e) {
 			System.out.println("File doesn't exist!");
 			System.out.println(e.getMessage());
 		}
 		return false;
 	}
-	
-	
-	public static Server unmarshal(byte[] request)
-	{
-	    String req = Arrays.toString(request); // In form [48,34,...]
+
+	public static Server unmarshal(byte[] request) {
+		String req = Arrays.toString(request); // In form [48,34,...]
 		String[] byteValues = req.substring(1, req.length() - 1).split(",");
 		byte[] bytes = new byte[byteValues.length];
 
-		for (int i=0, len=bytes.length; i<len; i++) {
-   			bytes[i] = Byte.parseByte(byteValues[i].trim());     
+		for (int i = 0, len = bytes.length; i < len; i++) {
+			bytes[i] = Byte.parseByte(byteValues[i].trim());
 		}
 
 		String true_request = new String(bytes);
-		System.out.println("True:"+true_request);
-		
-	    Server ob =  new Server();
+		System.out.println("True:" + true_request);
 
-	    ob.length = Integer.parseInt(true_request.substring(0,4));
-	    ob.path = true_request.substring(4,ob.length+4);
-        System.out.println(ob.path);
-	    ob.type = true_request.substring(ob.length+4,ob.length+5);
-	    ob.offset = Integer.parseInt(true_request.substring(ob.length+5,ob.length+9));
-	    ob.length = Integer.parseInt(true_request.substring(ob.length+9,ob.length+13));
+		Server ob = new Server();
 
-	    if (ob.type.compareTo("W")==0){
-	    	int contentLength = Integer.parseInt(true_request.substring(ob.length+13,ob.length+17));
-	    	ob.content = true_request.substring(ob.length+17,ob.length+17+contentLength);
-	    }
+		ob.length = Integer.parseInt(true_request.substring(0, 4));
+		ob.path = true_request.substring(4, ob.length + 4);
+		System.out.println(ob.path);
+		ob.type = true_request.substring(ob.length + 4, ob.length + 5);
+		switch (ob.type.toUpperCase()) {
+		case "R":
+			ob.offset = Integer.parseInt(true_request.substring(ob.length + 5,
+					ob.length + 9));
+			ob.length = Integer.parseInt(true_request.substring(ob.length + 9,
+					ob.length + 13));
+			break;
+		case "W":
+			ob.offset = Integer.parseInt(true_request.substring(ob.length + 5,
+					ob.length + 9));
+			int dataLength = Integer.parseInt(true_request.substring(
+					ob.length + 9, ob.length + 13));
+			ob.data = true_request.substring(ob.length + 13, ob.length + 13
+					+ dataLength);
+			System.out.println(ob.data);
+			break;
+		case "D":
+			break;
+		case "M":
+			ob.monitorInterval = Integer.parseInt(true_request.substring(
+					ob.length + 5, ob.length + 9));
+			break;
+		case "F":
+			int destPathLen = Integer.parseInt(true_request.substring(
+					ob.length + 5, ob.length + 9));
+			ob.destPath = true_request.substring(ob.length + 9, ob.length + 9
+					+ destPathLen);
+			break;
 
-	    System.out.println(ob.length);
-	    return ob;
-	}	   
-	
+		}
+
+		return ob;
+	}
+
 }
