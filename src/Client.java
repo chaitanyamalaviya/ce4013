@@ -19,8 +19,9 @@ public class Client {
 		// serializing byte array-can't use
 		// ObjectOutput out = null;
 		int op = 0;
-		Client ob = new Client();;
-		Scanner reader = new Scanner(System.in);
+		Client ob = new Client();
+		;
+		Scanner reader = new Scanner(System.in).useDelimiter("\n");
 		while (op != 6) {
 			System.out.println("Hello and Welcome to the Remote File System!");
 			System.out.println("1. Read File");
@@ -35,7 +36,7 @@ public class Client {
 			case 1:
 				ob.type = "R";
 				System.out.println("Please enter the file path:");
-				ob.path = reader.nextLine();
+				ob.path = reader.next();
 				System.out.println("Please enter the offset:");
 				ob.offset = reader.nextInt();
 				System.out.println("Please enter the length:");
@@ -44,77 +45,80 @@ public class Client {
 			case 2:
 				ob.type = "W";
 				System.out.println("Please enter the file path:");
-				ob.path = reader.nextLine();
+				ob.path = reader.next();
 				System.out.println("Please enter the offset:");
 				ob.offset = reader.nextInt();
 				System.out.println("Please enter the data:");
-				ob.data = reader.nextLine();
+				ob.data = reader.next();
 				break;
 			case 3:
 				ob.type = "D";
 				System.out.println("Please enter the file path:");
-				ob.path = reader.nextLine();
-				//Are you sure you want to delete the file?
+				ob.path = reader.next();
+				// Are you sure you want to delete the file?
 				break;
 			case 4:
 				ob.type = "M";
 				System.out.println("Please enter the file path:");
-				ob.path = reader.nextLine();
+				ob.path = reader.next();
 				System.out.println("Please enter the monitor interval in seconds:");
 				ob.monitorInterval = reader.nextInt();
 				break;
 			case 5:
 				ob.type = "F";
 				System.out.println("Please enter the file path:");
-				ob.path = reader.nextLine();
+				ob.path = reader.next();
 				System.out.println("Please enter the destination file path:");
-				ob.destPath = reader.nextLine();
+				ob.destPath = reader.next();
 				break;
 
 			case 6:
 				System.out.println("Goodbye!");
 				return;
 			}
-		}
 
-		try {
-			aSocket = new DatagramSocket();
-			byte[] clientRequest = marshal(ob);
-			System.out.println("Req:" + clientRequest);
-			// out = new ObjectOutputStream(bos);
-			// out.writeObject(ob);
-			// byte[] clientRequest = bos.toByteArray();
+			ob.path = "/home/ashwin/Academics/Distributed-Computing/ce4013/TestFile.txt";
+			
+			try {
+				aSocket = new DatagramSocket();
+				byte[] clientRequest = marshal(ob);
+				System.out.println("Req:" + clientRequest);
+				// out = new ObjectOutputStream(bos);
+				// out.writeObject(ob);
+				// byte[] clientRequest = bos.toByteArray();
 
-			InetAddress aHost = InetAddress.getByName(args[4]);
-			int serverPort = 2222;
+				InetAddress aHost = InetAddress.getByName(args[4]);
+				int serverPort = 2222;
 
-			DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
-			aSocket.send(request);
-			// send packet using socket method
-			byte[] buffer = new byte[1000]; // a buffer for receive
+				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
+				aSocket.send(request);
+				// send packet using socket method
+				byte[] buffer = new byte[1000]; // a buffer for receive
 
-			DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a
-																				// different
-																				// constructor
-			aSocket.receive(reply);
-			// System.out.println("File Data: "+ new String(reply.getData()));
-			// System.out.println("File Data: "+ buffer);
-			String got = Arrays.toString(buffer); // In form [48,34,...]
-			String[] byteValues = got.substring(1, got.length() - 1).split(",");
-			byte[] bytes = new byte[byteValues.length];
+				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a
+																					// different
+																					// constructor
+				aSocket.receive(reply);
+				// System.out.println("File Data: "+ new
+				// String(reply.getData()));
+				// System.out.println("File Data: "+ buffer);
+				String got = Arrays.toString(buffer); // In form [48,34,...]
+				String[] byteValues = got.substring(1, got.length() - 1).split(",");
+				byte[] bytes = new byte[byteValues.length];
 
-			for (int i = 0, len = bytes.length; i < len; i++) {
-				bytes[i] = Byte.parseByte(byteValues[i].trim());
+				for (int i = 0, len = bytes.length; i < len; i++) {
+					bytes[i] = Byte.parseByte(byteValues[i].trim());
+				}
+
+				String answer = new String(bytes);
+				System.out.println("Reply data:" + answer);
+
+			} finally {
+				if (aSocket != null)
+					aSocket.close();
 			}
 
-			String answer = new String(bytes);
-			System.out.println("Reply data:" + answer);
-
-		} finally {
-			if (aSocket != null)
-				aSocket.close();
 		}
-
 	}
 
 	public static byte[] marshal(Client ob) {
@@ -124,26 +128,29 @@ public class Client {
 		switch (ob.type.toUpperCase()) {
 		case "R":
 			con = String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
-			+ String.format("%04d", ob.length);
+					+ String.format("%04d", ob.length);
 			break;
 		case "W":
 			con = String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
-			+ String.format("%04d", ob.data.length()) + ob.data;
+					+ String.format("%04d", ob.data.length()) + ob.data;
 			break;
 		case "D":
 			con = String.format("%04d", ob.path.length()) + ob.path + ob.type;
 			break;
 		case "M":
-			con = String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.monitorInterval);
+			con = String.format("%04d", ob.path.length()) + ob.path + ob.type
+					+ String.format("%04d", ob.monitorInterval);
 			break;
 		case "F":
-			con = String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.destPath.length()) + ob.destPath;
+			con = String.format("%04d", ob.path.length()) + ob.path + ob.type
+					+ String.format("%04d", ob.destPath.length()) + ob.destPath;
 			break;
 
 		}
 
-		//String con = String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
-		//		+ String.format("%04d", ob.length);
+		// String con = String.format("%04d", ob.path.length()) + ob.path +
+		// ob.type + String.format("%04d", ob.offset)
+		// + String.format("%04d", ob.length);
 		byte[] req = con.getBytes();
 
 		// byte[] path_ob = ob.path.getBytes();

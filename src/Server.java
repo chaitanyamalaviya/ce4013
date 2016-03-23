@@ -1,4 +1,6 @@
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.io.*;
 
@@ -7,7 +9,7 @@ public class Server {
 	public String path;
 	public String type; // type of operation - 'R'/'W'/'D' etc
 	public int offset;
-	public int length;
+	public int length; // length of path
 	public int monitorInterval;
 	public String data;
 	public String destPath;
@@ -43,9 +45,7 @@ public class Server {
 					break;
 
 				}
-
-				if (ob.type.compareTo("R") == 0)
-					ob.result = getFileData(ob);
+				
 				System.out.println(ob.result);
 				byte[] res = ob.result.getBytes();
 				DatagramPacket reply = new DatagramPacket(res, res.length, request.getAddress(), request.getPort()); // to
@@ -96,14 +96,15 @@ public class Server {
 
 	public static boolean writeData(Server ob) throws IOException {
 
-		FileOutputStream out = null;
+		RandomAccessFile out = null;;
 		try {
-			out = new FileOutputStream(ob.path);
-			out.write(ob.data.getBytes(), ob.offset, ob.length);
+			out = new RandomAccessFile(ob.path, "rw");
+			out.seek(ob.offset);
+			out.write(ob.data.getBytes());
 			return true;
 
 		} catch (Exception e) {
-			System.out.println("Error: IOException thrown in getFileData");
+			System.out.println("Error: IOException thrown in writeData");
 			System.out.println(e.getMessage());
 		}
 
@@ -164,9 +165,9 @@ public class Server {
 			break;
 		case "W":
 			ob.offset = Integer.parseInt(true_request.substring(ob.length + 5, ob.length + 9));
-			ob.length = Integer.parseInt(true_request.substring(ob.length + 9, ob.length + 13));
-			int dataLength = Integer.parseInt(true_request.substring(ob.length + 13, ob.length + 17));
-			ob.data = true_request.substring(ob.length + 17, ob.length + 17 + dataLength);
+			int dataLength = Integer.parseInt(true_request.substring(ob.length + 9, ob.length + 13));
+			ob.data = true_request.substring(ob.length + 13, ob.length + 13 + dataLength);
+			System.out.println(ob.data);
 			break;
 		case "D":
 			break;
