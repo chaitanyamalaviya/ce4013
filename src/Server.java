@@ -1,13 +1,14 @@
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Arrays;
-import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.*;
+import java.io.*;
 
-public class Server {
+
+public class Server extends Thread {
 
 	public String path;
 	public String type; // type of operation - 'R'/'W'/'D' etc
@@ -16,9 +17,11 @@ public class Server {
 	public int monitorInterval;
 	public String data;
 	public String destPath;
-
+	public static Map monitor = new HashMap();
+	
 	public boolean writeSucceed;
 	public String result;
+	private static Thread t;
 
 	public static void main(String args[]) throws IOException,
 			ClassNotFoundException {
@@ -48,7 +51,10 @@ public class Server {
 							ob.result = "F";
 						break;
 					case "M":
-						addMonitorClient();
+						if (addMonitorClient(ob,request))
+							ob.result = "T";
+						else
+							ob.result = "F";
 						break;
 					case "F":
 						ob.result = String.format("%02d", copy(ob));
@@ -136,21 +142,61 @@ public class Server {
 		return false;
 	}
 
-	public static boolean addMonitorClient() { // Add monitoring client entry to
+	public static boolean addMonitorClient(Server ob, DatagramPacket request) { // Add monitoring client entry to
 												// the dictionary
+		try{
+			
+		
+		Vector<Object> parent;
+		if (monitor.containsKey(ob.path))
+		    parent = (Vector<Object>) monitor.get(ob.path);
+		else 
+			parent = new Vector(5);
+		
+		Vector entry = new Vector(2);
+		entry.add(request.getAddress());
+		entry.add(request.getPort());
+		entry.add(ob.monitorInterval);
+		parent.add(entry);
+		
+		monitor.put(ob.path,parent);
+		ob.t = new Thread();
+		ob.run(ob,request);
+		return true;
+		}
+		
+		catch(Exception e){
+			System.out.println(e.getMessage());
+			return false;
+		}
+		
+	}
+	
+	public void run(Server ob, DatagramPacket request) {
+	      System.out.println("Running " + request.getAddress() );
+	      try {
+	            Thread.sleep(ob.monitorInterval);
+	         }
+	     catch (InterruptedException e) {
+	         System.out.println("Thread " +  request.getAddress() + " interrupted.");
+	     }
+	     System.out.println("Thread " +  request.getAddress() + " exiting.");
+	     removeMonitorClient();
+	   }
+	
+
+	
+	public static boolean removeMonitorClient() { 
+		// Remove monitoring client entry upon expiry of its monitor interval
+		
+		
 		return true;
 	}
 
-	public static boolean removeMonitorClient() { // Remove monitoring client
-													// entry upon expiry of its
-													// monitor interval
-		return true;
-	}
+	public static boolean sendUpdates(File fd) { 
+		// Called every time a change is made to the specified file, sends updates to all clients monitoring this file
 
-	public static boolean sendUpdates(File fd) { // Called every time a change
-													// is made to the specified
-													// file
-
+		
 		return true;
 	}
 
