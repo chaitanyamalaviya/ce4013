@@ -12,7 +12,54 @@ public class Client {
 	public int monitorInterval;
 	public String data;
 	public String destPath;
+	
+	public List<Cache> cache;
 
+	public int readCache(String path, int offset, int length)
+	{
+		if(cache.isEmpty())
+		{
+			return 0;
+		}
+		
+		// Iterate through cache and find if exists
+		// System.out.println("Returned from client cache:" + cache[i].data);
+		for (Cache cache2 : cache) {
+			if(cache2.path.compareTo(path) != 0)
+			{
+				continue;
+			}
+			
+			if(cache2.offset > offset || ((cache2.offset + cache2.length) > (offset + length)))
+			{
+				continue;
+			}
+			
+			System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, (cache2.offset + cache2.length) - (offset + length)));
+		}
+		
+		return 1;
+	}
+	
+	public void updateCache(String path, String data, int offset, int length)
+	{
+		int found = 0;
+		for (Cache cache2 : cache) {
+			if(cache2.path.compareTo(path) == 0)
+			{
+				cache2.data = data;
+				cache2.length = length;
+				cache2.offset = offset;
+				found = 1;
+			}
+		}
+		
+		if(found == 1)
+			return;
+		
+		cache.add(new Cache(path, data, offset, length));
+	}
+	
 	public static void main(String args[]) throws IOException, NotSerializableException {
 		DatagramSocket aSocket = null;
 		// ByteArrayOutputStream bos = new ByteArrayOutputStream(); //For
@@ -20,7 +67,6 @@ public class Client {
 		// ObjectOutput out = null;
 		int op = 0;
 		Client ob = new Client();
-		;
 		Scanner reader = new Scanner(System.in).useDelimiter("\n");
 		while (op != 6) {
 			System.out.println("Hello and Welcome to the Remote File System!");
@@ -77,6 +123,11 @@ public class Client {
 				return;
 			}
 
+			ob.path = "/home/ashwin/Academics/Distributed-Computing/ce4013/TestFile.txt";
+			if(ob.type.compareTo("R") == 0 && ob.readCache(ob.path, ob.offset, ob.length) == 1)
+			{
+				continue;
+			}
 			
 			try {
 				aSocket = new DatagramSocket();
