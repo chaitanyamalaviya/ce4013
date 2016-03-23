@@ -26,8 +26,8 @@ public class Client {
 			System.out.println("Hello and Welcome to the Remote File System!");
 			System.out.println("1. Read File");
 			System.out.println("2. Insert content into the file");
-			System.out.println("3. Monitor file updates");
-			System.out.println("4. Delete the file ");
+			System.out.println("3. Delete the file ");
+			System.out.println("4. Monitor file updates");
 			System.out.println("5. Make a copy of the file ");
 			System.out.println("6. Exit");
 			System.out.println("Please enter your choice (1-6):");
@@ -68,7 +68,7 @@ public class Client {
 				ob.type = "F";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
-				System.out.println("Please enter the destination file path:");
+				System.out.println("Please enter the destination folder:");
 				ob.destPath = reader.next();
 				break;
 

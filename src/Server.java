@@ -79,14 +79,14 @@ public class Server {
 	public static String getFileData(Server ob) throws IOException {
 
 		System.out.println(ob.path);
-
-		FileInputStream in = null;
 		int size = ob.length;
 		byte[] bs = new byte[size];
-		try {
 
-			in = new FileInputStream(ob.path);
-			in.read(bs, ob.offset, ob.length);
+		RandomAccessFile in = null;
+		try {
+			in = new RandomAccessFile(ob.path, "rw");
+			in.seek(ob.offset);
+			in.read(bs);
 			String out = new String(bs);
 			return out;
 
@@ -107,7 +107,6 @@ public class Server {
 	public static boolean writeData(Server ob) throws IOException {
 
 		RandomAccessFile out = null;
-		;
 		try {
 			out = new RandomAccessFile(ob.path, "rw");
 			out.seek(ob.offset);
@@ -224,7 +223,6 @@ public class Server {
 					ob.length + 9, ob.length + 13));
 			ob.data = true_request.substring(ob.length + 13, ob.length + 13
 					+ dataLength);
-			System.out.println(ob.data);
 			break;
 		case "D":
 			break;
