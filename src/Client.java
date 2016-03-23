@@ -19,6 +19,7 @@ public class Client {
 		// serializing byte array-can't use
 		// ObjectOutput out = null;
 		int op = 0;
+		Client ob = new Client();;
 		Scanner reader = new Scanner(System.in);
 		while (op != 6) {
 			System.out.println("Hello and Welcome to the Remote File System!");
@@ -30,7 +31,6 @@ public class Client {
 			System.out.println("6. Exit");
 			System.out.println("Please enter your choice (1-6):");
 			op = reader.nextInt();
-			Client ob = new Client();
 			switch (op) {
 			case 1:
 				ob.type = "R";
