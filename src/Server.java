@@ -21,8 +21,8 @@ public class Server extends Thread {
 	
 	public boolean writeSucceed;
 	public String result;
-	private static Thread t;
-
+	
+	
 	public static void main(String args[]) throws IOException,
 			ClassNotFoundException {
 
@@ -57,7 +57,7 @@ public class Server extends Thread {
 							ob.result = "F";
 						break;
 					case "F":
-						ob.result = String.format("%02d", copy(ob));
+						ob.result = copy(ob);
 						break;
 					case "D":
 						if (delete(ob))
@@ -127,6 +127,7 @@ public class Server extends Thread {
 			out.write(ob.data.getBytes());
 			
 			out.write(bs);
+			sendUpdates(ob); //send updates to all the clients monitoring this file
 			
 			return true;
 		} catch (Exception e) {
@@ -142,10 +143,10 @@ public class Server extends Thread {
 		return false;
 	}
 
-	public static boolean addMonitorClient(Server ob, DatagramPacket request) { // Add monitoring client entry to
-												// the dictionary
+	public static boolean addMonitorClient(Server ob, DatagramPacket request) { 
+		// Add monitoring client entry to the hashmap
+												
 		try{
-			
 		
 		Vector<Object> parent;
 		if (monitor.containsKey(ob.path))
@@ -153,15 +154,16 @@ public class Server extends Thread {
 		else 
 			parent = new Vector(5);
 		
-		Vector entry = new Vector(2);
+		Vector entry = new Vector(4);
 		entry.add(request.getAddress());
 		entry.add(request.getPort());
 		entry.add(ob.monitorInterval);
+		Date date = new Date();
+		entry.add(date.toString());
 		parent.add(entry);
 		
 		monitor.put(ob.path,parent);
-		ob.t = new Thread();
-		ob.run(ob,request);
+		
 		return true;
 		}
 		
@@ -170,37 +172,69 @@ public class Server extends Thread {
 			return false;
 		}
 		
+		
 	}
 	
-	public void run(Server ob, DatagramPacket request) {
-	      System.out.println("Running " + request.getAddress() );
-	      try {
-	            Thread.sleep(ob.monitorInterval);
-	         }
-	     catch (InterruptedException e) {
-	         System.out.println("Thread " +  request.getAddress() + " interrupted.");
-	     }
-	     System.out.println("Thread " +  request.getAddress() + " exiting.");
-	     removeMonitorClient();
-	   }
-	
-
-	
-	public static boolean removeMonitorClient() { 
-		// Remove monitoring client entry upon expiry of its monitor interval
-		
-		
-		return true;
+	public static int timeDiff(Date timestamp, Date current){
+		int diff = (int) (timestamp.getTime()-current.getTime());
+		return diff/1000;
 	}
 
-	public static boolean sendUpdates(File fd) { 
+	public static boolean sendUpdates(Server ob) throws IOException { 
 		// Called every time a change is made to the specified file, sends updates to all clients monitoring this file
-
-		
+		DatagramSocket aSocket = null;
+		DatagramPacket reply = null;
+		try{
+		Vector<Object> clients= (Vector<Object>)monitor.get(ob.path);
+		byte[] res;
+		for (int i=0;i<clients.size();i++){
+			Vector<Object> client = (Vector<Object>)(clients.get(i));
+			Date date = new Date();
+			Date timestamp = (Date) client.get(3);
+			int minterval = (int)client.get(2);
+			if (minterval<timeDiff(timestamp,date))
+				removeMonitorClient(ob,i);
+			else{
+				aSocket = new DatagramSocket((int)client.get(1));
+				if (ob.data!=null)
+					res = (ob.data+ob.offset).getBytes();
+				else
+					res = "Deleted".getBytes();
+					
+			    reply = new DatagramPacket(res, res.length,(InetAddress) client.get(0), (int)client.get(1)); 											
+			    aSocket.send(reply);
+			}	
+		}
 		return true;
 	}
-
-	public static int copy(Server ob) throws IOException { // Non-idempotent
+		catch(Exception e){
+			System.out.println("IOException at sendUpdates");
+			System.out.println(e.getMessage());
+			return false;
+		}
+		finally {
+			if (aSocket != null)
+				aSocket.close();
+			}
+	}
+	
+	
+	
+	public static boolean removeMonitorClient(Server ob, int i) { 
+		// Remove monitoring client entry upon expiry of its monitor interval
+		try{
+		Vector<Object> clients= (Vector<Object>)monitor.get(ob.path);
+		clients.removeElementAt(i);
+		return true;
+		}
+		catch(Exception e){
+			System.out.println(e.getMessage());
+			return false;
+		}
+	}
+	
+	
+	public static String copy(Server ob) throws IOException { // Non-idempotent
 
 		try {
 			File fs = new File(ob.path);
@@ -222,18 +256,18 @@ public class Server extends Thread {
 				fd = loc.toFile();
 				if (!fd.exists()) {
 					Files.copy(fs.toPath(), loc);
-					return i;
+					return (name + "-copy-" + i + ext);
 				}
 				
 			}
 			Files.copy(fs.toPath(), loc);
-			return i;
+			return (name+ext);
 			
 			
 		} catch (Exception e) {
 			System.out.println("File doesn't exist!");
 			System.out.println(e.getMessage());
-			return -1;
+			return null;
 		}
 		
 	}
@@ -245,6 +279,7 @@ public class Server extends Thread {
 			if (fs.exists()) {
 				Path p = Paths.get(ob.path);
 				Files.deleteIfExists(p);
+				sendUpdates(ob);
 				return true;
 			}
 		} catch (Exception e) {
