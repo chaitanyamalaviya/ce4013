@@ -13,36 +13,45 @@ public class Client {
 	public String data;
 	public String destPath;
 	
-	public List<Cache> cache;
+	public List<Cache> cache = new ArrayList<Cache>();
 
 	public int readCache(String path, int offset, int length)
 	{
+		
 		if(cache.isEmpty())
 		{
+			System.out.println("Cache is empty");
 			return 0;
 		}
 		
 		// Iterate through cache and find if exists
 		// System.out.println("Returned from client cache:" + cache[i].data);
 		for (Cache cache2 : cache) {
+
+			System.out.println(String.format("%d, %d, %d, %d", cache2.offset, offset, cache2.length, length ));
+			
 			if(cache2.path.compareTo(path) != 0)
 			{
+				System.out.println("path mismatch");
 				continue;
 			}
 			
-			if(cache2.offset > offset || ((cache2.offset + cache2.length) > (offset + length)))
+			if(cache2.offset > offset || ((cache2.offset + cache2.length) < (offset + length)))
 			{
 				continue;
 			}
 			
-			System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, (cache2.offset + cache2.length) - (offset + length)));
+			System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
+			
+			return 1;
 		}
 		
-		return 1;
+		return 0;
 	}
 	
 	public void updateCache(String path, String data, int offset, int length)
 	{
+		System.out.println("Cache Update()");
 		int found = 0;
 		for (Cache cache2 : cache) {
 			if(cache2.path.compareTo(path) == 0)
@@ -58,6 +67,8 @@ public class Client {
 			return;
 		
 		cache.add(new Cache(path, data, offset, length));
+
+		System.out.println("Cache Updated Sucessfully");
 	}
 	
 	public static void main(String args[]) throws IOException, NotSerializableException {
@@ -162,6 +173,12 @@ public class Client {
 
 				String answer = new String(bytes);
 				System.out.println("Reply data:" + answer);
+				
+				
+				if(ob.type.compareTo("R") == 0)
+				{
+					ob.updateCache(ob.path, answer, ob.offset, ob.length);
+				}
 
 			} finally {
 				if (aSocket != null)
