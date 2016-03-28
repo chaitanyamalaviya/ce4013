@@ -102,14 +102,15 @@ public class Client {
 
 						System.out.println("Error: Cache eviction failed");
 					}
+					else{
+						cache2.Tc = new Date();
+					}
 				}
 				catch(IOException e)
 				{
 					System.out.println(e.getMessage());
 				}
 			}
-			
-			cache2.Tc = new Date();
 			
 			System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
 			
