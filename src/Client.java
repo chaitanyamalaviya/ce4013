@@ -188,7 +188,7 @@ public class Client {
 				
 		Random rand = new Random();
 		
-		ob.t = Integer.parseInt(args[5]);
+		ob.t = Integer.parseInt(args[1]);
 
 		System.out.println("Hello and Welcome to the Remote File System!");
 		
@@ -260,7 +260,7 @@ public class Client {
 				// out.writeObject(ob);
 				// byte[] clientRequest = bos.toByteArray();
 
-				ob.aHost = InetAddress.getByName(args[4]);
+				ob.aHost = InetAddress.getByName(args[0]);
 				ob.serverPort = 2222;
 								
 				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, ob.aHost, ob.serverPort);
