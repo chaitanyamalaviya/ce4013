@@ -91,6 +91,9 @@ public class Client {
 					String answer = new String(bytes);
 					Date Tmserver = new Date(Long.parseLong(answer.substring(0, 13)));
 					
+					System.out.println(Tmserver);
+					System.out.println(cache2.Tmclient);
+					
 					if(Tmserver != cache2.Tmclient)
 					{
 						if(cache.remove(cache2))
