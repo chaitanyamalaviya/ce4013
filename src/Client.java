@@ -11,6 +11,8 @@ public class Client {
 	InetAddress aHost;
 	int serverPort;
 	
+	DatagramSocket aSocket;
+	
 	public String path;
 	public String type; // type of operation - 'R'/'W'/'D' etc
 	public int offset;
@@ -30,7 +32,7 @@ public class Client {
 		return diff/1000;
 	}
 	
-	public int readCache(String path, int offset, int length, DatagramSocket aSocket)
+	public int readCache(String path, int offset, int length)
 	{
 		
 		if(cache.isEmpty())
@@ -84,11 +86,14 @@ public class Client {
 					}
 
 					String answer = new String(bytes);
-					Date Tmserver = new Date(Long.parseLong(answer));
+					Date Tmserver = new Date(Long.parseLong(answer.substring(0, 13)));
 					
 					if(Tmserver != cache2.Tmclient)
 					{
-						continue;
+						if(cache.remove(cache2))
+							continue;
+
+						System.out.println("Error: Cache eviction failed");
 					}
 				}
 				catch(IOException e)
@@ -96,6 +101,8 @@ public class Client {
 					System.out.println(e.getMessage());
 				}
 			}
+			
+			cache2.Tc = new Date();
 			
 			System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
 			
@@ -122,13 +129,54 @@ public class Client {
 		if(found == 1)
 			return;
 		
-		cache.add(new Cache(path, data, offset, length));
+		//getAttr - last modified time
+		String con = String.format("%04d", path.length()) + path + "T";
+		byte[] clientRequest = con.getBytes();
+		
+		DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
+		
+		try{
+			aSocket.send(request);		
 
-		System.out.println("Cache Updated Sucessfully");
+			byte[] buffer = new byte[1000]; // a buffer for receive
+
+			DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
+			
+			aSocket.receive(reply);
+			// System.out.println("File Data: "+ new
+			// String(reply.getData()));
+			// System.out.println("File Data: "+ buffer);
+			String got = Arrays.toString(buffer); // In form [48,34,...]
+			String[] byteValues = got.substring(1, got.length() - 1).split(",");
+			byte[] bytes = new byte[byteValues.length];
+
+			for (int i = 0, len = bytes.length; i < len; i++) {
+				bytes[i] = Byte.parseByte(byteValues[i].trim());
+			}
+
+			String answer = new String(bytes);
+			System.out.println(answer);
+			System.out.println(answer.length());
+			
+			Date Tmserver = new Date(Long.parseLong(answer.substring(0, 13)));
+						
+			Cache newCache = new Cache(path, data, offset, length);
+			newCache.Tmclient = Tmserver;
+			newCache.Tc = new Date();
+			
+			cache.add(newCache);
+			
+			System.out.println("Cache Updated Sucessfully");
+		
+		}
+		catch(IOException e)
+		{
+			System.out.println(e.getMessage());
+			System.out.println("Cache Update Failed");
+		}
 	}
 	
 	public static void main(String args[]) throws IOException, NotSerializableException {
-		DatagramSocket aSocket = null;
 		// ByteArrayOutputStream bos = new ByteArrayOutputStream(); //For
 		// serializing byte array-can't use
 		// ObjectOutput out = null;
@@ -136,14 +184,16 @@ public class Client {
 		Client ob = new Client();
 		Scanner reader = new Scanner(System.in).useDelimiter("\n");
 		
+		ob.aSocket = null;
+				
 		Random rand = new Random();
 		
-		while (op != 6) {
-			System.out.println("Hello and Welcome to the Remote File System!");
 
-			System.out.println("Please specifiy the freshness interval (in sec): ");
-			ob.t = reader.nextInt();
-			
+		System.out.println("Hello and Welcome to the Remote File System!");
+		System.out.println("Please specifiy the freshness interval (in sec): ");
+		ob.t = reader.nextInt();
+		
+		while (op != 6) {			
 			System.out.println("1. Read File");
 			System.out.println("2. Insert content into the file");
 			System.out.println("3. Delete the file ");
@@ -198,14 +248,14 @@ public class Client {
 			}
 
 			ob.path = "/home/ashwin/Academics/Distributed-Computing/ce4013/TestFile.txt";
-			if(ob.type.compareTo("R") == 0 && ob.readCache(ob.path, ob.offset, ob.length, aSocket) == 1)
+			if(ob.type.compareTo("R") == 0 && ob.readCache(ob.path, ob.offset, ob.length) == 1)
 			{
 				continue;
 			}
 				
 			
 			try {
-				aSocket = new DatagramSocket();
+				ob.aSocket = new DatagramSocket();
 				byte[] clientRequest = marshal(ob);
 				System.out.println("Req:" + clientRequest);
 				// out = new ObjectOutputStream(bos);
@@ -221,7 +271,11 @@ public class Client {
 				int n = rand.nextInt(10);
 				if( n != 8 )
 				{
-					aSocket.send(request);
+					ob.aSocket.send(request);
+				}
+				else
+				{
+					System.out.println("Simulating request packet drop");
 				}
 				
 				// send packet using socket method
@@ -229,14 +283,14 @@ public class Client {
 
 				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
 								
-				aSocket.setSoTimeout(1000);
+				ob.aSocket.setSoTimeout(1000);
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
 													// differently, block until
 													// monitor interval expires
 					while (true) {
 						try{							
-							aSocket.receive(reply); //Blocking command
+							ob.aSocket.receive(reply); //Blocking command
 							String got = Arrays.toString(buffer); // In form [48,34,...]
 							String[] byteValues = got
 									.substring(1, got.length() - 1).split(",");
@@ -252,13 +306,13 @@ public class Client {
 						catch(SocketTimeoutException e) {
 			                // timeout exception.
 			                System.out.println("Monitor Interval Over!!! " + e);
-			                aSocket.close();
+			                ob.aSocket.close();
 						}
 							
 					}
 				}
 
-				aSocket.receive(reply);
+				ob.aSocket.receive(reply);
 				// System.out.println("File Data: "+ new
 				// String(reply.getData()));
 				// System.out.println("File Data: "+ buffer);
@@ -280,8 +334,8 @@ public class Client {
 				}
 
 			} finally {
-				if (aSocket != null)
-					aSocket.close();
+				if (ob.aSocket != null)
+					ob.aSocket.close();
 			}
 
 		}
