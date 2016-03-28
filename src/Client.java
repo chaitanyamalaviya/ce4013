@@ -292,11 +292,15 @@ public class Client {
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
 													// differently, block until
+					Date startTime = new Date();
 					ob.aSocket.receive(reply);
-					ob.aSocket.setSoTimeout(ob.monitorInterval*1000);					// monitor interval expires
 					System.out.println("Monitoring for updates...");
 					while (true) {
-						try{							
+						try{					
+							int timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime);
+							if (timeout<0)
+								break;
+							ob.aSocket.setSoTimeout(timeout);					// monitor interval expires
 							ob.aSocket.receive(reply); //Blocking command
 							String got = Arrays.toString(buffer); // In form [48,34,...]
 							String[] byteValues = got
