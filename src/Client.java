@@ -28,7 +28,7 @@ public class Client {
 
 	public static int currenttimeDiff(Date timestamp){
 		Date current = new Date();
-		int diff = (int) (timestamp.getTime()-current.getTime());
+		int diff = (int) (current.getTime()-timestamp.getTime());
 		return diff/1000;
 	}
 	
@@ -57,6 +57,9 @@ public class Client {
 			{
 				continue;
 			}
+			
+			System.out.println(currenttimeDiff(cache2.Tc));
+			System.out.println(t);
 			
 			if( currenttimeDiff(cache2.Tc) > t)
 			{

@@ -240,6 +240,10 @@ public class Server extends Thread {
 				{
 					aSocket.send(reply);
 				}
+				else
+				{
+					System.out.println("Simulating request packet drop");
+				}
 			}	
 		}
 		return true;
