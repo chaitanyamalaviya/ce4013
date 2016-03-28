@@ -183,7 +183,7 @@ public class Client {
 			
 			cache.add(newCache);
 			
-			System.out.println("Cache Updated Sucessfully");
+			System.out.println("Cache Updated Successfully");
 		
 		}
 		catch(IOException e)
@@ -241,8 +241,11 @@ public class Client {
 				ob.type = "D";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
-				// Are you sure you want to delete the file?
-				break;
+				System.out.println("Are you sure you want to delete the file?(Y/N)");
+				if (reader.next().toUpperCase().equals("Y"))
+					break;
+				else 
+					continue;
 			case 4:
 				ob.type = "M";
 				System.out.println("Please enter the file path:");
@@ -321,6 +324,9 @@ public class Client {
 							String monitor = new String(bytes);		
 							int length = Integer.parseInt(monitor.substring(0,4));
 							System.out.println("Changes Made to "+ ob.path + ": " + monitor.substring(4,length+4));
+							if (monitor.contains("File Deleted!")) //Stop monitoring if file is deleted
+								break;
+									
 						  }
 						catch(SocketTimeoutException e) {
 			                // timeout exception.

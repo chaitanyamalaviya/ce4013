@@ -176,8 +176,19 @@ public class Server extends Thread {
 		try{
 		
 		Vector<Object> parent;
-		if (monitor.containsKey(ob.path))
+		if (monitor.containsKey(ob.path)){
 		    parent = (Vector<Object>) monitor.get(ob.path);
+		    for (int i=0;i<parent.size();i++){
+		    	Vector<Object> client = (Vector<Object>)(parent.get(i));
+		    	int minterval = (int)client.get(2);
+				DateFormat fm = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy"); //Mon Mar 28 19:58:13 SGT 2016
+				Date timestamp = fm.parse((String)client.get(3));
+				Date date = new Date();
+				if (minterval<timeDiff(timestamp,date))
+					removeMonitorClient(ob,i);
+		    }
+		    	
+		}
 		else 
 			parent = new Vector(5);
 		
@@ -230,9 +241,10 @@ public class Server extends Thread {
 					String send = ("'"+ob.data+"'"+" inserted at offset "+ ob.offset);
 					res = (String.format("%04d",send.length())+send).getBytes();
 				}
-				else
+				else{
 					res = (String.format("%04d",13)+"File Deleted!").getBytes();
-				
+					monitor.remove(ob.path);
+				}
 				reply = new DatagramPacket(res, res.length, (InetAddress)client.get(0), (int)client.get(1)); 																					
 			    
 			 // Packet drop simulation
