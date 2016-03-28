@@ -71,6 +71,8 @@ public class Client {
 				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
 				
 				try{
+					aSocket = new DatagramSocket();
+					
 					aSocket.send(request);		
 
 					byte[] buffer = new byte[1000]; // a buffer for receive
