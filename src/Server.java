@@ -8,7 +8,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.io.*;
-
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 public class Server extends Thread {
 
@@ -23,25 +24,23 @@ public class Server extends Thread {
 	
 	public boolean writeSucceed;
 	public String result;
-	
+	private static DatagramSocket aSocket = null;
 	public static Random rand = new Random();
 	
 	public static void main(String args[]) throws IOException,
 			ClassNotFoundException {
 
-		DatagramSocket aSocket = null;
-
 		try {
 			aSocket = new DatagramSocket(2222); // bound to host and port
-			byte[] buffer = new byte[1000];
+			byte[] buffer;
 			while (true) {
-
+				buffer = new byte[1000];
 				DatagramPacket request = new DatagramPacket(buffer,
 						buffer.length);
 				aSocket.receive(request); // blocked if no input
 				Server ob = unmarshal(buffer);
-
-				System.out.println(ob.type);
+				//System.out.println("Inet and Port: "+ request.getAddress() + request.getPort());
+				//System.out.println(ob.type);
 
 				switch (ob.type.toUpperCase()) {
 					case "R":
@@ -79,9 +78,9 @@ public class Server extends Thread {
 					}
 
 				System.out.println(ob.result);
-				byte[] res = ob.result.getBytes();
-				DatagramPacket reply = new DatagramPacket(res, res.length,request.getAddress(), request.getPort()); 
-															
+				byte[] res = (String.format("%04d", ob.result.length())+ob.result).getBytes();
+				DatagramPacket reply = new DatagramPacket(res, res.length, request.getAddress(), request.getPort()); 
+														
 				aSocket.send(reply);
 			}
 		} finally {
@@ -94,7 +93,7 @@ public class Server extends Thread {
 
 	public static String getFileData(Server ob) throws IOException {
 
-		System.out.println(ob.path);
+		//System.out.println(ob.path);
 		int size = ob.length;
 		byte[] bs = new byte[size];
 
@@ -191,6 +190,7 @@ public class Server extends Thread {
 		
 		monitor.put(ob.path,parent);
 		
+		System.out.println(monitor);
 		return true;
 		}
 		
@@ -209,26 +209,30 @@ public class Server extends Thread {
 
 	public static boolean sendUpdates(Server ob) throws IOException { 
 		// Called every time a change is made to the specified file, sends updates to all clients monitoring this file
-		DatagramSocket aSocket = null;
 		DatagramPacket reply = null;
 		try{
 		Vector<Object> clients= (Vector<Object>)monitor.get(ob.path);
 		byte[] res;
-		for (int i=0;i<clients.size();i++){
+		for (int i=0;i<clients.size();i++){  // Send updates to all monitoring clients
 			Vector<Object> client = (Vector<Object>)(clients.get(i));
-			Date date = new Date();
-			Date timestamp = (Date) client.get(3);
 			int minterval = (int)client.get(2);
+			DateFormat fm = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy"); //Mon Mar 28 19:58:13 SGT 2016
+			Date timestamp = fm.parse((String)client.get(3));
+			
+			Date date = new Date();
+			System.out.println(Math.abs(timeDiff(timestamp,date)));
+
 			if (minterval<timeDiff(timestamp,date))
 				removeMonitorClient(ob,i);
 			else{
-				aSocket = new DatagramSocket((int)client.get(1));
-				if (ob.data!=null)
-					res = (ob.data+ob.offset).getBytes();
+				if (ob.data!=null){
+					String send = ("'"+ob.data+"'"+" inserted at offset "+ ob.offset);
+					res = (String.format("%04d",send.length())+send).getBytes();
+				}
 				else
-					res = "Deleted".getBytes();
-					
-			    reply = new DatagramPacket(res, res.length,(InetAddress) client.get(0), (int)client.get(1)); 											
+					res = (String.format("%04d",13)+"File Deleted!").getBytes();
+				
+				reply = new DatagramPacket(res, res.length, (InetAddress)client.get(0), (int)client.get(1)); 																					
 			    
 			 // Packet drop simulation
 				int n = rand.nextInt(10);
@@ -245,10 +249,6 @@ public class Server extends Thread {
 			System.out.println(e.getMessage());
 			return false;
 		}
-		finally {
-			if (aSocket != null)
-				aSocket.close();
-			}
 	}
 	
 	
@@ -338,7 +338,7 @@ public class Server extends Thread {
 
 		ob.length = Integer.parseInt(true_request.substring(0, 4));
 		ob.path = true_request.substring(4, ob.length + 4);
-		System.out.println(ob.path);
+		//System.out.println(ob.path);
 		ob.type = true_request.substring(ob.length + 4, ob.length + 5);
 		switch (ob.type.toUpperCase()) {
 		case "R":

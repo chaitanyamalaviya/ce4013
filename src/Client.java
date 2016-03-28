@@ -247,7 +247,6 @@ public class Client {
 				return;
 			}
 
-			ob.path = "/home/ashwin/Academics/Distributed-Computing/ce4013/TestFile.txt";
 			if(ob.type.compareTo("R") == 0 && ob.readCache(ob.path, ob.offset, ob.length) == 1)
 			{
 				continue;
@@ -280,14 +279,14 @@ public class Client {
 				
 				// send packet using socket method
 				byte[] buffer = new byte[1000]; // a buffer for receive
-
 				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
-								
 				ob.aSocket.setSoTimeout(1000);
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
 													// differently, block until
-													// monitor interval expires
+					ob.aSocket.receive(reply);
+					ob.aSocket.setSoTimeout(ob.monitorInterval*1000);					// monitor interval expires
+					System.out.println("Monitoring for updates...");
 					while (true) {
 						try{							
 							ob.aSocket.receive(reply); //Blocking command
@@ -300,39 +299,45 @@ public class Client {
 								bytes[i] = Byte.parseByte(byteValues[i].trim());
 							}
 	
-							String monitor = new String(bytes);
-							System.out.println("Changes Made to "+ ob.path + ":" + monitor);
+							String monitor = new String(bytes);		
+							int length = Integer.parseInt(monitor.substring(0,4));
+							System.out.println("Changes Made to "+ ob.path + ": " + monitor.substring(4,length+4));
 						  }
 						catch(SocketTimeoutException e) {
 			                // timeout exception.
-			                System.out.println("Monitor Interval Over!!! " + e);
+			                System.out.println("Monitor Interval Over! ");
 			                ob.aSocket.close();
+						}
+						catch(SocketException e){
+							System.out.println("Socket Closed!");
+							break;
 						}
 							
 					}
 				}
-
-				ob.aSocket.receive(reply);
-				// System.out.println("File Data: "+ new
-				// String(reply.getData()));
-				// System.out.println("File Data: "+ buffer);
-				String got = Arrays.toString(buffer); // In form [48,34,...]
-				String[] byteValues = got.substring(1, got.length() - 1).split(",");
-				byte[] bytes = new byte[byteValues.length];
-
-				for (int i = 0, len = bytes.length; i < len; i++) {
-					bytes[i] = Byte.parseByte(byteValues[i].trim());
+				else{
+					ob.aSocket.receive(reply);
+					// System.out.println("File Data: "+ new
+					// String(reply.getData()));
+					// System.out.println("File Data: "+ buffer);
+					String got = Arrays.toString(buffer); // In form [48,34,...]
+					String[] byteValues = got.substring(1, got.length() - 1).split(",");
+					byte[] bytes = new byte[byteValues.length];
+	
+					for (int i = 0, len = bytes.length; i < len; i++) {
+						bytes[i] = Byte.parseByte(byteValues[i].trim());
+					}
+	
+					String answer = new String(bytes);
+					int length = Integer.parseInt(answer.substring(0,4));
+					System.out.println("Reply data:" + answer.substring(4,length+4));
+					
+					
+					if(ob.type.compareTo("R") == 0)
+					{
+						ob.updateCache(ob.path, answer.substring(4,length+4), ob.offset, ob.length);
+					}
 				}
-
-				String answer = new String(bytes);
-				System.out.println("Reply data:" + answer);
-				
-				
-				if(ob.type.compareTo("R") == 0)
-				{
-					ob.updateCache(ob.path, answer, ob.offset, ob.length);
-				}
-
 			} finally {
 				if (ob.aSocket != null)
 					ob.aSocket.close();
