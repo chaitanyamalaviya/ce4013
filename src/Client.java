@@ -45,7 +45,7 @@ public class Client {
 		// System.out.println("Returned from client cache:" + cache[i].data);
 		for (Cache cache2 : cache) {
 
-			System.out.println(String.format("%d, %d, %d, %d", cache2.offset, offset, cache2.length, length ));
+			//System.out.println(String.format("%d, %d, %d, %d", cache2.offset, offset, cache2.length, length ));
 			
 			if(cache2.path.compareTo(path) != 0)
 			{
@@ -155,8 +155,8 @@ public class Client {
 			}
 
 			String answer = new String(bytes);
-			System.out.println(answer);
-			System.out.println(answer.length());
+			//System.out.println(answer);
+			//System.out.println(answer.length());
 			
 			Date Tmserver = new Date(Long.parseLong(answer.substring(0, 13)));
 						
@@ -279,7 +279,6 @@ public class Client {
 				// send packet using socket method
 				byte[] buffer = new byte[1000]; // a buffer for receive
 				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
-				ob.aSocket.setSoTimeout(1000);
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
 													// differently, block until

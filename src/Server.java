@@ -203,7 +203,7 @@ public class Server extends Thread {
 	}
 	
 	public static int timeDiff(Date timestamp, Date current){
-		int diff = (int) (timestamp.getTime()-current.getTime());
+		int diff = (int) (current.getTime()-timestamp.getTime());
 		return diff/1000;
 	}
 
@@ -220,7 +220,7 @@ public class Server extends Thread {
 			Date timestamp = fm.parse((String)client.get(3));
 			
 			Date date = new Date();
-			System.out.println(Math.abs(timeDiff(timestamp,date)));
+			System.out.println(timeDiff(timestamp,date));
 
 			if (minterval<timeDiff(timestamp,date))
 				removeMonitorClient(ob,i);
