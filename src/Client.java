@@ -285,7 +285,7 @@ public class Client {
 				}
 				
 				// send packet using socket method
-				byte[] buffer = new byte[1000]; // a buffer for receive
+				byte[] buffer = new byte[1000]; // a buffer for reply
 				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
