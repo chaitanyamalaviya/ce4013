@@ -188,10 +188,9 @@ public class Client {
 				
 		Random rand = new Random();
 		
+		ob.t = Integer.parseInt(args[5]);
 
 		System.out.println("Hello and Welcome to the Remote File System!");
-		System.out.println("Please specifiy the freshness interval (in sec): ");
-		ob.t = reader.nextInt();
 		
 		while (op != 6) {			
 			System.out.println("1. Read File");
@@ -263,7 +262,7 @@ public class Client {
 
 				ob.aHost = InetAddress.getByName(args[4]);
 				ob.serverPort = 2222;
-				
+								
 				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, ob.aHost, ob.serverPort);
 
 				// Packet drop simulation
