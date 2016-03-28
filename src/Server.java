@@ -22,6 +22,7 @@ public class Server extends Thread {
 	public boolean writeSucceed;
 	public String result;
 	
+	public static Random rand = new Random();
 	
 	public static void main(String args[]) throws IOException,
 			ClassNotFoundException {
@@ -202,7 +203,13 @@ public class Server extends Thread {
 					res = "Deleted".getBytes();
 					
 			    reply = new DatagramPacket(res, res.length,(InetAddress) client.get(0), (int)client.get(1)); 											
-			    aSocket.send(reply);
+			    
+			 // Packet drop simulation
+				int n = rand.nextInt(10);
+				if( n != 8 )
+				{
+					aSocket.send(reply);
+				}
 			}	
 		}
 		return true;

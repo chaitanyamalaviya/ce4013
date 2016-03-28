@@ -13,6 +13,9 @@ public class Client {
 	public String data;
 	public String destPath;
 	
+	// Freshness interval
+	public int t;
+	
 	public List<Cache> cache = new ArrayList<Cache>();
 
 	public int readCache(String path, int offset, int length)
@@ -79,8 +82,15 @@ public class Client {
 		int op = 0;
 		Client ob = new Client();
 		Scanner reader = new Scanner(System.in).useDelimiter("\n");
+		
+		Random rand = new Random();
+		
 		while (op != 6) {
 			System.out.println("Hello and Welcome to the Remote File System!");
+
+			System.out.println("Please specifiy the freshness interval:");
+			ob.t = reader.nextInt();
+			
 			System.out.println("1. Read File");
 			System.out.println("2. Insert content into the file");
 			System.out.println("3. Delete the file ");
@@ -153,7 +163,14 @@ public class Client {
 				int serverPort = 2222;
 
 				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
-				aSocket.send(request);
+
+				// Packet drop simulation
+				int n = rand.nextInt(10);
+				if( n != 8 )
+				{
+					aSocket.send(request);
+				}
+				
 				// send packet using socket method
 				byte[] buffer = new byte[1000]; // a buffer for receive
 
