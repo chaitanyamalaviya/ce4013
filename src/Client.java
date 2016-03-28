@@ -139,6 +139,7 @@ public class Client {
 			{
 				continue;
 			}
+				
 			
 			try {
 				aSocket = new DatagramSocket();
@@ -156,9 +157,29 @@ public class Client {
 				// send packet using socket method
 				byte[] buffer = new byte[1000]; // a buffer for receive
 
-				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a
-																					// different
-																					// constructor
+				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
+								
+				
+				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
+													// differently, block until
+													// monitor interval expires
+					Date date = new Date();
+					while (ob.monitorInterval > date.getTime()) {
+						aSocket.receive(reply); //Blocking command
+						String got = Arrays.toString(buffer); // In form [48,34,...]
+						String[] byteValues = got
+								.substring(1, got.length() - 1).split(",");
+						byte[] bytes = new byte[byteValues.length];
+
+						for (int i = 0, len = bytes.length; i < len; i++) {
+							bytes[i] = Byte.parseByte(byteValues[i].trim());
+						}
+
+						String monitor = new String(bytes);
+						System.out.println("Changes Made to "+ ob.path + ":" + monitor);
+					}
+				}
+
 				aSocket.receive(reply);
 				// System.out.println("File Data: "+ new
 				// String(reply.getData()));
