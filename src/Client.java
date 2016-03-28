@@ -28,7 +28,7 @@ public class Client {
 
 	public static int currenttimeDiff(Date timestamp){
 		Date current = new Date();
-		int diff = (int) (timestamp.getTime()-current.getTime());
+		int diff = (int) (current.getTime()-timestamp.getTime());
 		return diff/1000;
 	}
 	
@@ -57,6 +57,9 @@ public class Client {
 			{
 				continue;
 			}
+			
+			System.out.println(currenttimeDiff(cache2.Tc));
+			System.out.println(t);
 			
 			if( currenttimeDiff(cache2.Tc) > t)
 			{
@@ -279,7 +282,6 @@ public class Client {
 				// send packet using socket method
 				byte[] buffer = new byte[1000]; // a buffer for receive
 				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
-				ob.aSocket.setSoTimeout(1000);
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
 													// differently, block until
