@@ -1,10 +1,16 @@
 import java.net.*;
 import java.io.*;
 import java.nio.*;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Client {
 
+	InetAddress aHost;
+	int serverPort;
+	
 	public String path;
 	public String type; // type of operation - 'R'/'W'/'D' etc
 	public int offset;
@@ -18,7 +24,13 @@ public class Client {
 	
 	public List<Cache> cache = new ArrayList<Cache>();
 
-	public int readCache(String path, int offset, int length)
+	public static int currenttimeDiff(Date timestamp){
+		Date current = new Date();
+		int diff = (int) (timestamp.getTime()-current.getTime());
+		return diff/1000;
+	}
+	
+	public int readCache(String path, int offset, int length, DatagramSocket aSocket)
 	{
 		
 		if(cache.isEmpty())
@@ -42,6 +54,47 @@ public class Client {
 			if(cache2.offset > offset || ((cache2.offset + cache2.length) < (offset + length)))
 			{
 				continue;
+			}
+			
+			if( currenttimeDiff(cache2.Tc) > t)
+			{
+				//getAttr - last modified time
+				String con = String.format("%04d", cache2.path.length()) + cache2.path + "T";
+				byte[] clientRequest = con.getBytes();
+				
+				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
+				
+				try{
+					aSocket.send(request);		
+
+					byte[] buffer = new byte[1000]; // a buffer for receive
+
+					DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
+					
+					aSocket.receive(reply);
+					// System.out.println("File Data: "+ new
+					// String(reply.getData()));
+					// System.out.println("File Data: "+ buffer);
+					String got = Arrays.toString(buffer); // In form [48,34,...]
+					String[] byteValues = got.substring(1, got.length() - 1).split(",");
+					byte[] bytes = new byte[byteValues.length];
+
+					for (int i = 0, len = bytes.length; i < len; i++) {
+						bytes[i] = Byte.parseByte(byteValues[i].trim());
+					}
+
+					String answer = new String(bytes);
+					Date Tmserver = new Date(Long.parseLong(answer));
+					
+					if(Tmserver != cache2.Tmclient)
+					{
+						continue;
+					}
+				}
+				catch(IOException e)
+				{
+					System.out.println(e.getMessage());
+				}
 			}
 			
 			System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
@@ -88,7 +141,7 @@ public class Client {
 		while (op != 6) {
 			System.out.println("Hello and Welcome to the Remote File System!");
 
-			System.out.println("Please specifiy the freshness interval:");
+			System.out.println("Please specifiy the freshness interval (in sec): ");
 			ob.t = reader.nextInt();
 			
 			System.out.println("1. Read File");
@@ -145,7 +198,7 @@ public class Client {
 			}
 
 			ob.path = "/home/ashwin/Academics/Distributed-Computing/ce4013/TestFile.txt";
-			if(ob.type.compareTo("R") == 0 && ob.readCache(ob.path, ob.offset, ob.length) == 1)
+			if(ob.type.compareTo("R") == 0 && ob.readCache(ob.path, ob.offset, ob.length, aSocket) == 1)
 			{
 				continue;
 			}
@@ -159,10 +212,10 @@ public class Client {
 				// out.writeObject(ob);
 				// byte[] clientRequest = bos.toByteArray();
 
-				InetAddress aHost = InetAddress.getByName(args[4]);
-				int serverPort = 2222;
-
-				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
+				ob.aHost = InetAddress.getByName(args[4]);
+				ob.serverPort = 2222;
+				
+				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, ob.aHost, ob.serverPort);
 
 				// Packet drop simulation
 				int n = rand.nextInt(10);
@@ -257,6 +310,7 @@ public class Client {
 		case "F":
 			con = String.format("%04d", ob.path.length()) + ob.path + ob.type
 					+ String.format("%04d", ob.destPath.length()) + ob.destPath;
+			
 			break;
 
 		}

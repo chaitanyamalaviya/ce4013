@@ -4,6 +4,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.io.*;
 
@@ -45,26 +47,34 @@ public class Server extends Thread {
 					case "R":
 						ob.result = getFileData(ob);
 						break;
+					
 					case "W":
 						if (writeData(ob))
 							ob.result = "T";
 						else
 							ob.result = "F";
 						break;
+					
 					case "M":
 						if (addMonitorClient(ob,request))
 							ob.result = "T";
 						else
 							ob.result = "F";
 						break;
+					
 					case "F":
 						ob.result = copy(ob);
 						break;
+					
 					case "D":
 						if (delete(ob))
 							ob.result = "T";
 						else
 							ob.result = "F";
+						break;
+
+					case "T":
+						ob.result = getLastModifiedTime(ob.path);
 						break;
 					}
 
@@ -112,6 +122,22 @@ public class Server extends Thread {
 		return "";
 	}
 
+	public static String getLastModifiedTime(String path)
+	{
+		File file = null;
+		
+		try{
+			file = new File(path);
+		}
+		catch (Exception e) {
+
+				System.out.println("Error: IOException thrown in getLastModified()");
+				System.out.println(e.getMessage());
+		}
+		
+		return Long.toString(file.lastModified());
+	}
+	
 	public static boolean writeData(Server ob) throws IOException {
 
 		RandomAccessFile out = null;
