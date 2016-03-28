@@ -42,6 +42,8 @@ public class Client {
 			return 0;
 		}
 		
+		int indexOfCache = 0;
+		boolean stale = false;
 		// Iterate through cache and find if exists
 		// System.out.println("Returned from client cache:" + cache[i].data);
 		for (Cache cache2 : cache) {
@@ -99,10 +101,8 @@ public class Client {
 					
 					if(Tmserver != cache2.Tmclient)
 					{
-						if(cache.remove(cache2))
-							continue;
-
-						System.out.println("Error: Cache eviction failed");
+						stale = true;
+						indexOfCache = cache.indexOf(cache2);
 					}
 					else{
 						cache2.Tc = new Date();
@@ -114,9 +114,18 @@ public class Client {
 				}
 			}
 			
-			System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
-			
-			return 1;
+			if(!stale)
+			{
+				
+				System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
+				
+				return 1;
+			}
+		}
+		
+		if(stale)
+		{
+			cache.remove(indexOfCache);
 		}
 		
 		return 0;
@@ -125,20 +134,18 @@ public class Client {
 	public void updateCache(String path, String data, int offset, int length)
 	{
 		System.out.println("Cache Update()");
-		int found = 0;
 		for (Cache cache2 : cache) {
 			if(cache2.path.compareTo(path) == 0)
 			{
 				cache2.data = data;
 				cache2.length = length;
 				cache2.offset = offset;
-				found = 1;
+				cache2.Tc = new Date();
+				System.out.println("Found old cache"+cache2.Tc);
+				return;
 			}
 		}
-		
-		if(found == 1)
-			return;
-		
+
 		//getAttr - last modified time
 		String con = String.format("%04d", path.length()) + path + "T";
 		byte[] clientRequest = con.getBytes();
@@ -297,7 +304,7 @@ public class Client {
 					System.out.println("Monitoring for updates...");
 					while (true) {
 						try{					
-							int timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime);
+							int timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime)*1000;
 							if (timeout<0)
 								break;
 							ob.aSocket.setSoTimeout(timeout);					// monitor interval expires
