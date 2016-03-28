@@ -153,7 +153,8 @@ public class Server extends Thread {
 			out.write(ob.data.getBytes());
 			
 			out.write(bs);
-			sendUpdates(ob); //send updates to all the clients monitoring this file
+			if (monitor.containsKey(ob.path))
+				sendUpdates(ob); //send updates to all the clients(if any) monitoring this file
 			
 			return true;
 		} catch (Exception e) {
@@ -316,7 +317,8 @@ public class Server extends Thread {
 			if (fs.exists()) {
 				Path p = Paths.get(ob.path);
 				Files.deleteIfExists(p);
-				sendUpdates(ob);
+				if (monitor.containsKey(ob.path))
+					sendUpdates(ob);
 				return true;
 			}
 		} catch (Exception e) {
