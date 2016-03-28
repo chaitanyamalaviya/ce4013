@@ -23,6 +23,7 @@ public class Server extends Thread {
 	public boolean writeSucceed;
 	public String result;
 	private static DatagramSocket aSocket = null;
+	public static Random rand = new Random();
 	
 	public static void main(String args[]) throws IOException,
 			ClassNotFoundException {
@@ -205,9 +206,14 @@ public class Server extends Thread {
 				else
 					res = (String.format("%04d",13)+"File Deleted!").getBytes();
 				
-				reply = new DatagramPacket(res, res.length, (InetAddress)client.get(0), (int)client.get(1)); 											
-			    aSocket.send(reply);
+				reply = new DatagramPacket(res, res.length, (InetAddress)client.get(0), (int)client.get(1)); 																					
 			    
+			 // Packet drop simulation
+				int n = rand.nextInt(10);
+				if( n != 8 )
+				{
+					aSocket.send(reply);
+				}
 			}	
 		}
 		return true;
