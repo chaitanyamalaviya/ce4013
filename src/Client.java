@@ -179,7 +179,7 @@ public class Client {
 		Client ob = new Client();
 		Scanner reader = new Scanner(System.in).useDelimiter("\n");
 		
-		int timeout = 500;
+		int timeout;
 		
 		ob.aSocket = null;
 				
@@ -189,7 +189,9 @@ public class Client {
 
 		System.out.println("Hello and Welcome to the Remote File System!");
 		
-		while (op != 6) {			
+		while (op != 6) {
+			timeout = 1500;
+			
 			System.out.println("1. Read File");
 			System.out.println("2. Insert content into the file");
 			System.out.println("3. Delete the file ");
@@ -271,7 +273,7 @@ public class Client {
 				while(true)
 				{// Packet drop simulation
 					int n = rand.nextInt(10);
-					if( n == 8 )
+					if( n != 8 )
 					{
 						ob.aSocket.send(request);
 					}
