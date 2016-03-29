@@ -16,6 +16,8 @@ public class Client {
 	
 	DatagramSocket aSocket;
 	
+	int invocationSem;
+	
 	public String path;
 	public String type; // type of operation - 'R'/'W'/'D' etc
 	public int offset;
@@ -165,6 +167,8 @@ public class Client {
 		Client ob = new Client();
 		Scanner reader = new Scanner(System.in).useDelimiter("\n");
 		
+		int timeout = 500;
+		
 		ob.aSocket = null;
 				
 		Random rand = new Random();
@@ -248,30 +252,40 @@ public class Client {
 				ob.serverPort = 2222;
 								
 				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, ob.aHost, ob.serverPort);
-
-				// Packet drop simulation
-				int n = rand.nextInt(10);
-				if( n != 8 )
-				{
-					ob.aSocket.send(request);
-				}
-				else
-				{
-					System.out.println("Simulating request packet drop");
-				}
-				
-				// send packet using socket method
 				byte[] buffer = new byte[1000]; // a buffer for reply
 				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
+				ob.aSocket.setSoTimeout(timeout);					// monitor interval expires
+				
+				while(true)
+				{// Packet drop simulation
+					int n = rand.nextInt(10);
+					if( n == 8 )
+					{
+						ob.aSocket.send(request);
+					}
+					else
+					{
+						System.out.println("Simulating request packet drop");
+					}
+					
+					try{
+						ob.aSocket.receive(reply);
+						break;
+					}
+					catch(SocketTimeoutException e) {
+		                // timeout exception.
+		                System.out.println("Client Socket Timeout: Response not arrived");
+   					}
+				}
+				
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
 													// differently, block until
 					Date startTime = new Date();
-					ob.aSocket.receive(reply);
 					System.out.println("Monitoring for updates...");
 					while (true) {
 						try{					
-							int timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime)*1000;
+							timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime)*1000;
 							if (timeout<0)
 								break;
 							ob.aSocket.setSoTimeout(timeout);					// monitor interval expires
@@ -305,7 +319,6 @@ public class Client {
 					}
 				}
 				else{
-					ob.aSocket.receive(reply);
 					// System.out.println("File Data: "+ new
 					// String(reply.getData()));
 					// System.out.println("File Data: "+ buffer);
