@@ -44,7 +44,7 @@ public class Server extends Thread {
 
 				switch (ob.type.toUpperCase()) {
 					case "R":
-						ob.result = getFileData(ob);
+						ob.result = getFileData(ob) + getLastModifiedTime(ob.path).toString();
 						break;
 					
 					case "W":

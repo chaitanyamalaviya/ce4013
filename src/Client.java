@@ -6,6 +6,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 ///Users/chaitanya/documents/workspace/quotes/src/quotes/one-liners.txt
+///home/ashwin/Academics/Distributed-Computing/ce4013/TestFile.txt
+
 
 public class Client {
 
@@ -131,7 +133,7 @@ public class Client {
 		return 0;
 	}
 	
-	public void updateCache(String path, String data, int offset, int length)
+	public void updateCache(String path, String data, int offset, int length, Date Tmserver)
 	{
 		System.out.println("Cache Update()");
 		for (Cache cache2 : cache) {
@@ -141,56 +143,18 @@ public class Client {
 				cache2.length = length;
 				cache2.offset = offset;
 				cache2.Tc = new Date();
-				System.out.println("Found old cache"+cache2.Tc);
+				cache2.Tmclient = Tmserver;
 				return;
 			}
 		}
 
-		//getAttr - last modified time
-		String con = String.format("%04d", path.length()) + path + "T";
-		byte[] clientRequest = con.getBytes();
+		Cache newCache = new Cache(path, data, offset, length);
+		newCache.Tmclient = Tmserver;
+		newCache.Tc = new Date();
 		
-		DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
+		cache.add(newCache);
 		
-		try{
-			aSocket.send(request);		
-
-			byte[] buffer = new byte[1000]; // a buffer for receive
-
-			DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
-			
-			aSocket.receive(reply);
-			// System.out.println("File Data: "+ new
-			// String(reply.getData()));
-			// System.out.println("File Data: "+ buffer);
-			String got = Arrays.toString(buffer); // In form [48,34,...]
-			String[] byteValues = got.substring(1, got.length() - 1).split(",");
-			byte[] bytes = new byte[byteValues.length];
-
-			for (int i = 0, len = bytes.length; i < len; i++) {
-				bytes[i] = Byte.parseByte(byteValues[i].trim());
-			}
-
-			String answer = new String(bytes);
-			//System.out.println(answer);
-			//System.out.println(answer.length());
-			
-			Date Tmserver = new Date(Long.parseLong(answer.substring(0, 13)));
-						
-			Cache newCache = new Cache(path, data, offset, length);
-			newCache.Tmclient = Tmserver;
-			newCache.Tc = new Date();
-			
-			cache.add(newCache);
-			
-			System.out.println("Cache Updated Successfully");
-		
-		}
-		catch(IOException e)
-		{
-			System.out.println(e.getMessage());
-			System.out.println("Cache Update Failed");
-		}
+		System.out.println("Cache Updated Successfully");
 	}
 	
 	public static void main(String args[]) throws IOException, NotSerializableException {
@@ -360,7 +324,8 @@ public class Client {
 					
 					if(ob.type.compareTo("R") == 0)
 					{
-						ob.updateCache(ob.path, answer.substring(4,length+4), ob.offset, ob.length);
+						Date Tmserver = new Date(Long.parseLong(answer.substring(length-9, length + 4)));
+						ob.updateCache(ob.path, answer.substring(4,length-9), ob.offset, ob.length, Tmserver);
 					}
 				}
 			} finally {
