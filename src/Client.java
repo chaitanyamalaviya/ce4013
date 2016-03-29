@@ -273,7 +273,7 @@ public class Client {
 				while(true)
 				{// Packet drop simulation
 					int n = rand.nextInt(10);
-					if( n != 8 )
+					if( n <= 8 )
 					{
 						ob.aSocket.send(request);
 					}
@@ -346,9 +346,11 @@ public class Client {
 	
 					String answer = new String(bytes);
 					int length = Integer.parseInt(answer.substring(0,4));
-					System.out.println("Reply data:" + answer.substring(4,length+4));
-					
-					
+					if (ob.type.compareTo("R") == 0)
+						System.out.println("Reply data:" + answer.substring(4,length-9));
+					else
+						System.out.println("Reply data:" + answer.substring(4,length+4));
+
 					if(ob.type.compareTo("R") == 0)
 					{
 						Date Tmserver = new Date(Long.parseLong(answer.substring(length-9, length + 4)));

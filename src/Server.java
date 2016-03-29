@@ -53,13 +53,13 @@ public class Server extends Thread {
 				if(atmostOnce && responseCache.containsKey(crId))
 				{
 					int n = rand.nextInt(10);
-					if( n == 8 )
+					if( n > 8 )
 					{
 						aSocket.send((DatagramPacket)responseCache.get(crId));
 					}
 					else
 					{
-						System.out.println("Simulating request packet drop");
+						System.out.println("Simulating response packet drop");
 					}
 					
 					continue;
@@ -106,17 +106,17 @@ public class Server extends Thread {
 				
 				if(atmostOnce)
 				{
-					responseCache.put( Integer.parseInt((String.format("%5d", request.getPort()) + ob.requestId)), reply );
+					responseCache.put(Integer.parseInt((String.format("%5d", request.getPort()) + ob.requestId)), reply );
 				}
 								
 				int n = rand.nextInt(10);
-				if( n == 8 )
+				if( n > 8 )
 				{
 					aSocket.send(reply);
 				}
 				else
 				{
-					System.out.println("Simulating request packet drop");
+					System.out.println("Simulating response packet drop");
 				}
 			}
 		} finally {
