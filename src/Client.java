@@ -26,6 +26,8 @@ public class Client {
 	public String data;
 	public String destPath;
 	
+	public static int requestId = -1;
+	
 	// Freshness interval
 	public int t;
 	
@@ -35,6 +37,16 @@ public class Client {
 		Date current = new Date();
 		int diff = (int) (current.getTime()-timestamp.getTime());
 		return diff/1000;
+	}
+	
+	public static String getRequestId(){
+		requestId++;
+		
+		System.out.println(requestId);
+		requestId = requestId % 10000;
+		System.out.println(requestId);
+				
+		return String.format("%04d", requestId);
 	}
 	
 	public int readCache(String path, int offset, int length)
@@ -71,7 +83,7 @@ public class Client {
 			if( currenttimeDiff(cache2.Tc) > t)
 			{
 				//getAttr - last modified time
-				String con = String.format("%04d", cache2.path.length()) + cache2.path + "T";
+				String con = getRequestId() + String.format("%04d", cache2.path.length()) + cache2.path + "T";
 				byte[] clientRequest = con.getBytes();
 				
 				DatagramPacket request = new DatagramPacket(clientRequest, clientRequest.length, aHost, serverPort);
@@ -351,26 +363,26 @@ public class Client {
 
 	public static byte[] marshal(Client ob) {
 
-		String con = "";
+		String con = getRequestId();
 		// System.out.println(String.format("%04d", ob.path.length()));
 		switch (ob.type.toUpperCase()) {
 		case "R":
-			con = String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
+			con += String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
 					+ String.format("%04d", ob.length);
 			break;
 		case "W":
-			con = String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
+			con += String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
 					+ String.format("%04d", ob.data.length()) + ob.data;
 			break;
 		case "D":
-			con = String.format("%04d", ob.path.length()) + ob.path + ob.type;
+			con += String.format("%04d", ob.path.length()) + ob.path + ob.type;
 			break;
 		case "M":
-			con = String.format("%04d", ob.path.length()) + ob.path + ob.type
+			con += String.format("%04d", ob.path.length()) + ob.path + ob.type
 					+ String.format("%04d", ob.monitorInterval);
 			break;
 		case "F":
-			con = String.format("%04d", ob.path.length()) + ob.path + ob.type
+			con += String.format("%04d", ob.path.length()) + ob.path + ob.type
 					+ String.format("%04d", ob.destPath.length()) + ob.destPath;
 			
 			break;

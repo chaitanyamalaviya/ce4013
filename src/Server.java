@@ -352,6 +352,8 @@ public class Server extends Thread {
 		String true_request = new String(bytes);
 		System.out.println("True:" + true_request);
 
+		true_request = true_request.substring(4); // Ignore the requestId;
+		
 		Server ob = new Server();
 
 		ob.length = Integer.parseInt(true_request.substring(0, 4));
