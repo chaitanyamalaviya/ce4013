@@ -42,6 +42,8 @@ public class Client {
 			return 0;
 		}
 		
+		int indexOfCache = 0;
+		boolean stale = false;
 		// Iterate through cache and find if exists
 		// System.out.println("Returned from client cache:" + cache[i].data);
 		for (Cache cache2 : cache) {
@@ -99,10 +101,8 @@ public class Client {
 					
 					if(Tmserver != cache2.Tmclient)
 					{
-						if(cache.remove(cache2))
-							continue;
-
-						System.out.println("Error: Cache eviction failed");
+						stale = true;
+						indexOfCache = cache.indexOf(cache2);
 					}
 					else{
 						cache2.Tc = new Date();
@@ -114,9 +114,18 @@ public class Client {
 				}
 			}
 			
-			System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
-			
-			return 1;
+			if(!stale)
+			{
+				
+				System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
+				
+				return 1;
+			}
+		}
+		
+		if(stale)
+		{
+			cache.remove(indexOfCache);
 		}
 		
 		return 0;
@@ -125,20 +134,18 @@ public class Client {
 	public void updateCache(String path, String data, int offset, int length)
 	{
 		System.out.println("Cache Update()");
-		int found = 0;
 		for (Cache cache2 : cache) {
 			if(cache2.path.compareTo(path) == 0)
 			{
 				cache2.data = data;
 				cache2.length = length;
 				cache2.offset = offset;
-				found = 1;
+				cache2.Tc = new Date();
+				System.out.println("Found old cache"+cache2.Tc);
+				return;
 			}
 		}
-		
-		if(found == 1)
-			return;
-		
+
 		//getAttr - last modified time
 		String con = String.format("%04d", path.length()) + path + "T";
 		byte[] clientRequest = con.getBytes();
@@ -176,7 +183,7 @@ public class Client {
 			
 			cache.add(newCache);
 			
-			System.out.println("Cache Updated Sucessfully");
+			System.out.println("Cache Updated Successfully");
 		
 		}
 		catch(IOException e)
@@ -234,8 +241,11 @@ public class Client {
 				ob.type = "D";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
-				// Are you sure you want to delete the file?
-				break;
+				System.out.println("Are you sure you want to delete the file?(Y/N)");
+				if (reader.next().toUpperCase().equals("Y"))
+					break;
+				else 
+					continue;
 			case 4:
 				ob.type = "M";
 				System.out.println("Please enter the file path:");
@@ -287,7 +297,7 @@ public class Client {
 				}
 				
 				// send packet using socket method
-				byte[] buffer = new byte[1000]; // a buffer for receive
+				byte[] buffer = new byte[1000]; // a buffer for reply
 				DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
@@ -297,7 +307,7 @@ public class Client {
 					System.out.println("Monitoring for updates...");
 					while (true) {
 						try{					
-							int timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime);
+							int timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime)*1000;
 							if (timeout<0)
 								break;
 							ob.aSocket.setSoTimeout(timeout);					// monitor interval expires
@@ -314,6 +324,9 @@ public class Client {
 							String monitor = new String(bytes);		
 							int length = Integer.parseInt(monitor.substring(0,4));
 							System.out.println("Changes Made to "+ ob.path + ": " + monitor.substring(4,length+4));
+							if (monitor.contains("File Deleted!")) //Stop monitoring if file is deleted
+								break;
+									
 						  }
 						catch(SocketTimeoutException e) {
 			                // timeout exception.
