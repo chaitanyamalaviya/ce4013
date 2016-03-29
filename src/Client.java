@@ -389,31 +389,7 @@ public class Client {
 
 		}
 
-		// String con = String.format("%04d", ob.path.length()) + ob.path +
-		// ob.type + String.format("%04d", ob.offset)
-		// + String.format("%04d", ob.length);
 		byte[] req = con.getBytes();
-
-		// byte[] path_ob = ob.path.getBytes();
-		// byte[] path_length_ob =
-		// ByteBuffer.allocate(4).putInt(ob.path.length()).array();
-		// byte[] type_ob = ob.type.getBytes();
-		// byte[] offset_ob = ByteBuffer.allocate(4).putInt(ob.offset).array();
-		// byte[] length_ob = ByteBuffer.allocate(4).putInt(ob.length).array();
-		// byte[] req = new byte[path_ob.length + path_length_ob.length +
-		// type_ob.length + offset_ob.length + length_ob.length];
-		// //Would be better to do this iteratively
-		// System.arraycopy(path_ob, 0, req, 0, path_ob.length);
-		// System.arraycopy(path_length_ob, 0, req, path_ob.length,
-		// path_length_ob.length);
-		// System.arraycopy(type_ob, 0, req,
-		// path_length_ob.length+path_ob.length, type_ob.length);
-		// System.arraycopy(offset_ob, 0, req,
-		// path_length_ob.length+path_ob.length+type_ob.length,
-		// offset_ob.length);
-		// System.arraycopy(length_ob, 0, req,
-		// path_length_ob.length+path_ob.length+type_ob.length+offset_ob.length,
-		// length_ob.length);
 		return req;
 	}
 }
