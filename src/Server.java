@@ -22,14 +22,20 @@ public class Server extends Thread {
 	public String destPath;
 	public static Map monitor = new HashMap();
 	
+	public static Map responseCache = new HashMap();
+	
 	public boolean writeSucceed;
 	public String result;
 	private static DatagramSocket aSocket = null;
 	public static Random rand = new Random();
 	
+	public String requestId;
+	
 	public static void main(String args[]) throws IOException,
 			ClassNotFoundException {
 
+		boolean atmostOnce = (Integer.parseInt(args[0]) == 1);
+		
 		try {
 			aSocket = new DatagramSocket(2222); // bound to host and port
 			byte[] buffer;
@@ -41,6 +47,21 @@ public class Server extends Thread {
 				Server ob = unmarshal(buffer);
 				//System.out.println("Inet and Port: "+ request.getAddress() + request.getPort());
 				//System.out.println(ob.type);
+				
+				int crId = Integer.parseInt((String.format("%5d", request.getPort()) + ob.requestId));
+				
+				if(atmostOnce && responseCache.containsKey(crId))
+				{
+					int n = rand.nextInt(10);
+					if( n != 8 )
+					{
+						aSocket.send((DatagramPacket)responseCache.get(crId));
+					}
+					else
+					{
+						System.out.println("Simulating request packet drop");
+					}
+				}
 
 				switch (ob.type.toUpperCase()) {
 					case "R":
@@ -80,8 +101,21 @@ public class Server extends Thread {
 				System.out.println(ob.result);
 				byte[] res = (String.format("%04d", ob.result.length())+ob.result).getBytes();
 				DatagramPacket reply = new DatagramPacket(res, res.length, request.getAddress(), request.getPort()); 
-														
-				aSocket.send(reply);
+				
+				if(atmostOnce)
+				{
+					((Vector<Object>) responseCache).add( Integer.parseInt((String.format("%5d", request.getPort()) + ob.requestId)), reply );
+				}
+								
+				int n = rand.nextInt(10);
+				if( n != 8 )
+				{
+					aSocket.send(reply);
+				}
+				else
+				{
+					System.out.println("Simulating request packet drop");
+				}
 			}
 		} finally {
 			if (aSocket != null)
@@ -351,10 +385,11 @@ public class Server extends Thread {
 
 		String true_request = new String(bytes);
 		System.out.println("True:" + true_request);
-
-		true_request = true_request.substring(4); // Ignore the requestId;
 		
 		Server ob = new Server();
+
+		ob.requestId = true_request.substring(0, 4);
+		true_request = true_request.substring(4); // Ignore the requestId;
 
 		ob.length = Integer.parseInt(true_request.substring(0, 4));
 		ob.path = true_request.substring(4, ob.length + 4);
