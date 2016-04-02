@@ -11,13 +11,13 @@ import java.util.*;
 
 public class Client {
 
+	//Client-Server Connection parameters
 	InetAddress aHost;
 	int serverPort;
 	
 	DatagramSocket aSocket;
 	
-	int invocationSem;
-	
+	// Request parameters
 	public String path;
 	public String type; // type of operation - 'R'/'W'/'D' etc
 	public int offset;
@@ -39,6 +39,7 @@ public class Client {
 		return diff/1000;
 	}
 	
+	// Generates a new request id that is unique up to 10,000 requests
 	public static String getRequestId(){
 		requestId++;
 		
@@ -49,6 +50,11 @@ public class Client {
 		return String.format("%04d", requestId);
 	}
 	
+	// Reads the cache to see if the file data requested is cached locally.
+	// If the cached data is found but the freshness interval has expired,
+	// a request is made to the server for the last modified time. If the
+	// last modified time of the client is the same as the server, the 
+	// cached content is sent to the user and returns 1. If not returns 0.
 	public int readCache(String path, int offset, int length)
 	{
 		
@@ -60,29 +66,27 @@ public class Client {
 		
 		int indexOfCache = 0;
 		boolean stale = false;
+		
 		// Iterate through cache and find if exists
-		// System.out.println("Returned from client cache:" + cache[i].data);
 		for (Cache cache2 : cache) {
-
-			//System.out.println(String.format("%d, %d, %d, %d", cache2.offset, offset, cache2.length, length ));
-			
+			// Check if the path names are the same
 			if(cache2.path.compareTo(path) != 0)
 			{
 				System.out.println("path mismatch");
 				continue;
 			}
 			
+			// Check if the requested content is within the bounds of the cached content
 			if(cache2.offset > offset || ((cache2.offset + cache2.length) < (offset + length)))
 			{
 				continue;
 			}
 			
-			System.out.println(currenttimeDiff(cache2.Tc));
-			System.out.println(t);
-			
+			// Check the to see if the freshness interval has expired.
 			if( currenttimeDiff(cache2.Tc) > t)
 			{
-				//getAttr - last modified time
+				// Freshness interval has expired.
+				// Send a request to the server to get the last modified time (Tmserver)
 				String con = getRequestId() + String.format("%04d", cache2.path.length()) + cache2.path + "T";
 				byte[] clientRequest = con.getBytes();
 				
@@ -98,9 +102,6 @@ public class Client {
 					DatagramPacket reply = new DatagramPacket(buffer, buffer.length); // a different constructor
 					
 					aSocket.receive(reply);
-					// System.out.println("File Data: "+ new
-					// String(reply.getData()));
-					// System.out.println("File Data: "+ buffer);
 					String got = Arrays.toString(buffer); // In form [48,34,...]
 					String[] byteValues = got.substring(1, got.length() - 1).split(",");
 					byte[] bytes = new byte[byteValues.length];
@@ -112,15 +113,15 @@ public class Client {
 					String answer = new String(bytes);
 					Date Tmserver = new Date(Long.parseLong(answer.substring(0, 13)));
 					
-					System.out.println(Tmserver);
-					System.out.println(cache2.Tmclient);
-					
+					// Check to see if cache is stale or not
 					if(Tmserver != cache2.Tmclient)
 					{
+						// Cache is stale
 						stale = true;
-						indexOfCache = cache.indexOf(cache2);
+						indexOfCache = cache.indexOf(cache2); // Mark cache index for eviction
 					}
 					else{
+						// Cache is not stale. Reset the freshness interval start time
 						cache2.Tc = new Date();
 					}
 				}
@@ -132,7 +133,7 @@ public class Client {
 			
 			if(!stale)
 			{
-				
+				// Cache is not stale. Display data to the user.
 				System.out.println("Returned from client cache: " + cache2.data.substring(offset - cache2.offset, offset - cache2.offset + length));
 				
 				return 1;
@@ -141,14 +142,20 @@ public class Client {
 		
 		if(stale)
 		{
+			// Cache is stale. Evict the cache from the list using the recorded index.
 			cache.remove(indexOfCache);
 		}
 		
 		return 0;
 	}
 	
+	// 1. Cache of file exists: Updates the cache object with the new offset, length 
+	// and data obtained from the server response. 
+	// 2. Cache does of file does not exist: Creates a new entry in the list of cache
+	// objects.
 	public void updateCache(String path, String data, int offset, int length, Date Tmserver)
 	{
+		// Iterate to find if cache exists and if it does, update it.
 		System.out.println("Cache Update()");
 		for (Cache cache2 : cache) {
 			if(cache2.path.compareTo(path) == 0)
@@ -162,6 +169,8 @@ public class Client {
 			}
 		}
 
+		// Cached file does not exist. Create a new file cache and add it to the 
+		// list of cached objects.
 		Cache newCache = new Cache(path, data, offset, length);
 		newCache.Tmclient = Tmserver;
 		newCache.Tc = new Date();
@@ -172,17 +181,18 @@ public class Client {
 	}
 	
 	public static void main(String args[]) throws IOException, NotSerializableException {
-		// ByteArrayOutputStream bos = new ByteArrayOutputStream(); //For
-		// serializing byte array-can't use
-		// ObjectOutput out = null;
 		int op = 0;
 		Client ob = new Client();
+		
+		// Get user input using new line as the delimiter.
 		Scanner reader = new Scanner(System.in).useDelimiter("\n");
 		
+		// Socket timeout used to enforce retries when server response is not received.
 		int timeout;
 		
 		ob.aSocket = null;
-				
+		
+		// Init. random number generator for packet drop simulation
 		Random rand = new Random();
 		
 		ob.t = Integer.parseInt(args[1]);
@@ -191,7 +201,8 @@ public class Client {
 		
 		while (op != 6) {
 			timeout = 1500;
-			
+		
+			// Get user input on request type
 			System.out.println("1. Read File");
 			System.out.println("2. Insert content into the file");
 			System.out.println("3. Delete the file ");
@@ -201,6 +212,7 @@ public class Client {
 			System.out.println("Please enter your choice (1-6):");
 			op = reader.nextInt();
 			switch (op) {
+			// Get the other request parameters based on the type
 			case 1:
 				ob.type = "R";
 				System.out.println("Please enter the file path:");
@@ -248,12 +260,13 @@ public class Client {
 				return;
 			}
 
+			// If the request is a read, check cache first.
 			if(ob.type.compareTo("R") == 0 && ob.readCache(ob.path, ob.offset, ob.length) == 1)
 			{
 				continue;
 			}
 				
-			
+			// Marshal and send request to the server (server port assumed to be 2222)
 			try {
 				ob.aSocket = new DatagramSocket();
 				byte[] clientRequest = marshal(ob);
@@ -271,7 +284,8 @@ public class Client {
 				ob.aSocket.setSoTimeout(timeout);					// monitor interval expires
 				
 				while(true)
-				{// Packet drop simulation
+				{
+					// Packet drop simulation
 					int n = rand.nextInt(10);
 					if( n <= 8 )
 					{
@@ -294,26 +308,26 @@ public class Client {
 				
 				
 				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
-													// differently, block until
+													// differently, prepare for receiving
+													// server updates.
 					Date startTime = new Date();
 					System.out.println("Monitoring for updates...");
 					while (true) {
-						try{					
+						try{
+							// Wait for server to send updates till the monitor period is elapsed.
+							// Timeout is initially set to the (monitor period - time elapsed) and updated
+							// after every update is received;
+							// timeout = 	montiorInterval - (currentTime - startTime).
 							timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime)*1000;
+							
+							// Sanitization of timeout
 							if (timeout<0)
 								break;
+							
 							ob.aSocket.setSoTimeout(timeout);					// monitor interval expires
 							ob.aSocket.receive(reply); //Blocking command
-							String got = Arrays.toString(buffer); // In form [48,34,...]
-							String[] byteValues = got
-									.substring(1, got.length() - 1).split(",");
-							byte[] bytes = new byte[byteValues.length];
-	
-							for (int i = 0, len = bytes.length; i < len; i++) {
-								bytes[i] = Byte.parseByte(byteValues[i].trim());
-							}
-	
-							String monitor = new String(bytes);		
+								
+							String monitor = unmarshal(buffer);		
 							int length = Integer.parseInt(monitor.substring(0,4));
 							System.out.println("Changes Made to "+ ob.path + ": " + monitor.substring(4,length+4));
 							if (monitor.contains("File Deleted!")) //Stop monitoring if file is deleted
@@ -333,29 +347,23 @@ public class Client {
 					}
 				}
 				else{
-					// System.out.println("File Data: "+ new
-					// String(reply.getData()));
-					// System.out.println("File Data: "+ buffer);
-					String got = Arrays.toString(buffer); // In form [48,34,...]
-					String[] byteValues = got.substring(1, got.length() - 1).split(",");
-					byte[] bytes = new byte[byteValues.length];
-	
-					for (int i = 0, len = bytes.length; i < len; i++) {
-						bytes[i] = Byte.parseByte(byteValues[i].trim());
-					}
-	
-					String answer = new String(bytes);
+					// If not monitor request
+					String answer = unmarshal(buffer);
+					
 					int length = Integer.parseInt(answer.substring(0,4));
 					if (ob.type.compareTo("R") == 0)
 						System.out.println("Reply data:" + answer.substring(4,length-9));
 					else
 						System.out.println("Reply data:" + answer.substring(4,length+4));
 
+					// If a read request was made to the server, the cache needs to be updated
+					// with the response.
 					if(ob.type.compareTo("R") == 0)
 					{
 						Date Tmserver = new Date(Long.parseLong(answer.substring(length-9, length + 4)));
 						ob.updateCache(ob.path, answer.substring(4,length-9), ob.offset, ob.length, Tmserver);
 					}
+
 				}
 			} finally {
 				if (ob.aSocket != null)
@@ -365,34 +373,61 @@ public class Client {
 		}
 	}
 
+	public static String unmarshal(byte[] buffer)
+	{
+		// Convert the received byte array to string
+		String got = Arrays.toString(buffer); // In form [48,34,...]
+		String[] byteValues = got.substring(1, got.length() - 1).split(",");
+		byte[] bytes = new byte[byteValues.length];
+
+		for (int i = 0, len = bytes.length; i < len; i++) {
+			bytes[i] = Byte.parseByte(byteValues[i].trim());
+		}
+
+		return new String(bytes);		
+	}
+	
 	public static byte[] marshal(Client ob) {
 
+		// Begin with the requestId.
 		String con = getRequestId();
-		// System.out.println(String.format("%04d", ob.path.length()));
+
+		// Marshal each request based on the type of request
 		switch (ob.type.toUpperCase()) {
 		case "R":
+			// Request Id + 4 digit path length + path + one digit type of request + 4 digit offset
+			// + 4 digit length of data; where + is string concatenation
 			con += String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
 					+ String.format("%04d", ob.length);
 			break;
 		case "W":
+			// Request Id + 4 digit path length + path + one digit type of request + 4 digit offset
+			// + 4 digit length of data + data; where + is string concatenation
 			con += String.format("%04d", ob.path.length()) + ob.path + ob.type + String.format("%04d", ob.offset)
 					+ String.format("%04d", ob.data.length()) + ob.data;
 			break;
 		case "D":
+			// Request Id + 4 digit path length + path + one digit type of request 
+			// where + is string concatenation
 			con += String.format("%04d", ob.path.length()) + ob.path + ob.type;
 			break;
 		case "M":
+			// Request Id + 4 digit path length + path + one digit type of request + 4 digit monitorInterval
+			// where + is string concatenation
 			con += String.format("%04d", ob.path.length()) + ob.path + ob.type
 					+ String.format("%04d", ob.monitorInterval);
 			break;
 		case "F":
+			// Request Id + 4 digit path length + path + one digit type of request + 4 digit destPath length
+			// + destination path; where + is string concatenation
 			con += String.format("%04d", ob.path.length()) + ob.path + ob.type
 					+ String.format("%04d", ob.destPath.length()) + ob.destPath;
 			
 			break;
 
 		}
-
+		
+		// Convert final request string to bytes and return it.
 		byte[] req = con.getBytes();
 		return req;
 	}
