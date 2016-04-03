@@ -155,7 +155,7 @@ public class Client {
 	// objects.
 	public void updateCache(String path, String data, int offset, int length, Date Tmserver)
 	{
-		// Iterate to find if cache exists and if it does, update it.
+		// Iterate cache objects to find if data exists in cache and if it does, update it.
 		System.out.println("Cache Update()");
 		for (Cache cache2 : cache) {
 			if(cache2.path.compareTo(path) == 0)
@@ -212,7 +212,7 @@ public class Client {
 			System.out.println("Please enter your choice (1-6):");
 			op = reader.nextInt();
 			switch (op) {
-			// Get the other request parameters based on the type
+			// Get other request parameters based on request type
 			case 1:
 				ob.type = "R";
 				System.out.println("Please enter the file path:");
@@ -317,7 +317,7 @@ public class Client {
 							// Wait for server to send updates till the monitor period is elapsed.
 							// Timeout is initially set to the (monitor period - time elapsed) and updated
 							// after every update is received;
-							// timeout = 	montiorInterval - (currentTime - startTime).
+							// timeout = 	monitorInterval - (currentTime - startTime).
 							timeout = (ob.monitorInterval*1000)-currenttimeDiff(startTime)*1000;
 							
 							// Sanitization of timeout
