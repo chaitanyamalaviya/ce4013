@@ -34,6 +34,7 @@ public class Client {
 	public List<Cache> cache = new ArrayList<Cache>();
 
 	public static int currenttimeDiff(Date timestamp){
+		//"""Returns the time difference in seconds between timestamp and current time"""
 		Date current = new Date();
 		int diff = (int) (current.getTime()-timestamp.getTime());
 		return diff/1000;
@@ -50,11 +51,11 @@ public class Client {
 		return String.format("%04d", requestId);
 	}
 	
-	// Reads the cache to see if the file data requested is cached locally.
+	// """Reads the cache to see if the file data requested is cached locally.
 	// If the cached data is found but the freshness interval has expired,
 	// a request is made to the server for the last modified time. If the
 	// last modified time of the client is the same as the server, the 
-	// cached content is sent to the user and returns 1. If not returns 0.
+	// cached content is sent to the user and returns 1. If not returns 0."""
 	public int readCache(String path, int offset, int length)
 	{
 		
@@ -149,13 +150,14 @@ public class Client {
 		return 0;
 	}
 	
+	
 	// 1. Cache of file exists: Updates the cache object with the new offset, length 
 	// and data obtained from the server response. 
 	// 2. Cache does of file does not exist: Creates a new entry in the list of cache
 	// objects.
 	public void updateCache(String path, String data, int offset, int length, Date Tmserver)
 	{
-		// Iterate cache objects to find if data exists in cache and if it does, update it.
+		// """Iterate cache objects to find if data exists in cache and if it does, update it."""
 		System.out.println("Cache Update()");
 		for (Cache cache2 : cache) {
 			if(cache2.path.compareTo(path) == 0)
@@ -306,10 +308,11 @@ public class Client {
    					}
 				}
 				
-				
-				if (ob.type.compareTo("M") == 0) { // Handle Monitor Requests
-													// differently, prepare for receiving
-													// server updates.
+				//check request type and if marshal request was successful
+				if (ob.type.compareTo("M") == 0 && unmarshal(buffer).charAt(5)=='T') { //check if monitor request was successful
+					// Handle response to monitor requests differently,
+					// prepare for receiving file updates from server.
+													
 					Date startTime = new Date();
 					System.out.println("Monitoring for updates...");
 					while (true) {

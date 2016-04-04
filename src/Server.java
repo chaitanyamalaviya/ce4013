@@ -296,7 +296,7 @@ public class Server extends Thread {
 		//"""Returns the time difference in seconds between timestamp and current time"""
 		
 		int diff = (int) (current.getTime()-timestamp.getTime()); 
-		//getTime gives seconds from an epoch for a Date object 
+		//getTime gives seconds passed from an epoch for a Date object 
 		return diff/1000; //Conversion from milliseconds to seconds
 	}
 
