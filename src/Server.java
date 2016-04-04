@@ -59,7 +59,7 @@ public class Server extends Thread {
 				{
 					//Simulation of packet drop
 					int n = rand.nextInt(10);
-					if( n > 5 )
+					if( n > 1 )
 					{
 						aSocket.send((DatagramPacket)responseCache.get(crId)); 
 						//Send stored response message
@@ -72,6 +72,8 @@ public class Server extends Thread {
 					continue;
 				}
 
+				
+				
 				//Call respective method for each request type
 				switch (ob.type.toUpperCase()) {
 				
@@ -122,10 +124,12 @@ public class Server extends Thread {
 				{
 					responseCache.put(Integer.parseInt((String.format("%5d", request.getPort()) + ob.requestId)), reply );
 				}
-								
+						
+				
+				
 				//Simulation of packet drop
 				int n = rand.nextInt(10);
-				if( n > 8 )
+				if( n > 1 )
 				{
 					aSocket.send(reply);
 					//Reply sent back to client
@@ -143,6 +147,8 @@ public class Server extends Thread {
 
 	}
 
+	
+	
 	public static String getFileData(Server ob) throws IOException {
 		//"""Performs the read operation on a file using RandomAccessFile 
 		//and returns a String containing content read"""
@@ -175,6 +181,7 @@ public class Server extends Thread {
 
 		return "";
 	}
+	
 
 	public static String getLastModifiedTime(String path)
 		//"""Retrieves the last modified time for a file""" 
@@ -193,6 +200,7 @@ public class Server extends Thread {
 		//Return last modified time of file
 		return Long.toString(file.lastModified()); 
 	}
+	
 	
 	public static boolean writeData(Server ob) throws IOException {
 		//"""Performs a write operation of the passed content on a file 
@@ -238,6 +246,7 @@ public class Server extends Thread {
 
 		return false;
 	}
+	
 
 	public static boolean addMonitorClient(Server ob, DatagramPacket request) { 
 		// """Adds client entry to the monitor hashmap and returns boolean true if successful"""
@@ -292,6 +301,7 @@ public class Server extends Thread {
 		
 	}
 	
+	
 	public static int timeDiff(Date timestamp, Date current){
 		//"""Returns the time difference in seconds between timestamp and current time"""
 		
@@ -300,6 +310,7 @@ public class Server extends Thread {
 		return diff/1000; //Conversion from milliseconds to seconds
 	}
 
+	
 	public static boolean sendUpdates(Server ob) throws IOException { 
 		// """Called every time a change is made to the specified file, sends updates to all clients monitoring this file"""
 		
@@ -341,7 +352,7 @@ public class Server extends Thread {
 			    
 			    // Packet drop simulation
 				int n = rand.nextInt(10);
-				if( n != 8 )
+				if( n > 1 )
 				{
 					aSocket.send(reply);
 				}
@@ -424,6 +435,7 @@ public class Server extends Thread {
 		
 	}
 
+	
 	public static boolean delete(Server ob) throws IOException { 
 		//"""Deletes a file if file exists at given path and 
 		// returns boolean true if delete succeeds and false otherwise"""
@@ -448,6 +460,7 @@ public class Server extends Thread {
 		}
 		return false;
 	}
+	
 
 	public static Server unmarshal(byte[] request) {
 		//"""Unmarshals each request depending on its type and
@@ -466,7 +479,7 @@ public class Server extends Thread {
 
 		//true_request stores actual request from client
 		String true_request = new String(bytes);
-		System.out.println("True:" + true_request);
+		System.out.println("True Request: " + true_request);
 		
 		
 		Server ob = new Server();

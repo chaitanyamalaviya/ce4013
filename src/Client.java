@@ -1,6 +1,7 @@
 import java.net.*;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -40,14 +41,12 @@ public class Client {
 		return diff/1000;
 	}
 	
-	// Generates a new request id that is unique up to 10,000 requests
+	// """Generates a new request id that is unique up to 10,000 requests"""
 	public static String getRequestId(){
-		requestId++;
 		
-		System.out.println(requestId);
+		requestId++;
 		requestId = requestId % 10000;
-		System.out.println(requestId);
-				
+		System.out.println("Request ID: " + requestId);				
 		return String.format("%04d", requestId);
 	}
 	
@@ -158,7 +157,7 @@ public class Client {
 	public void updateCache(String path, String data, int offset, int length, Date Tmserver)
 	{
 		// """Iterate cache objects to find if data exists in cache and if it does, update it."""
-		System.out.println("Cache Update()");
+		//System.out.println("Cache Update()");
 		for (Cache cache2 : cache) {
 			if(cache2.path.compareTo(path) == 0)
 			{
@@ -203,7 +202,7 @@ public class Client {
 		
 		while (op != 6) {
 			timeout = 1500;
-		
+			File fs;
 			// Get user input on request type
 			System.out.println("1. Read File");
 			System.out.println("2. Insert content into the file");
@@ -219,42 +218,70 @@ public class Client {
 				ob.type = "R";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
+				fs = new File(ob.path);
+				if (!fs.exists()){
+					System.out.println("Invalid path!\nTry again!");
+					continue;}
 				System.out.println("Please enter the offset:");
 				ob.offset = reader.nextInt();
 				System.out.println("Please enter the length:");
 				ob.length = reader.nextInt();
 				break;
+				
 			case 2:
 				ob.type = "W";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
+				fs = new File(ob.path);
+				if (!fs.exists()){
+					System.out.println("Invalid path!\nTry again!");
+					continue;}
 				System.out.println("Please enter the offset:");
 				ob.offset = reader.nextInt();
 				System.out.println("Please enter the data:");
 				ob.data = reader.next();
 				break;
+				
 			case 3:
 				ob.type = "D";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
+				fs = new File(ob.path);
+				if (!fs.exists()){
+					System.out.println("Invalid path!\nTry again!");
+					continue;}
 				System.out.println("Are you sure you want to delete the file?(Y/N)");
 				if (reader.next().toUpperCase().equals("Y"))
 					break;
 				else 
 					continue;
+				
 			case 4:
 				ob.type = "M";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
+				fs = new File(ob.path);
+				if (!fs.exists()){
+					System.out.println("Invalid path!\nTry again!");
+					continue;}
 				System.out.println("Please enter the monitor interval in seconds:");
 				ob.monitorInterval = reader.nextInt();
 				break;
+				
 			case 5:
 				ob.type = "F";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
+				fs = new File(ob.path);
+				if (!fs.exists()){
+					System.out.println("Invalid path!\nTry again!");
+					continue;}
 				System.out.println("Please enter the destination folder:");
 				ob.destPath = reader.next();
+				fs = new File(ob.destPath);
+				if (!fs.exists()){
+					System.out.println("Invalid path!\nTry again!");
+					continue;}
 				break;
 
 			case 6:
@@ -262,12 +289,15 @@ public class Client {
 				return;
 			}
 
+			
 			// If the request is a read, check cache first.
 			if(ob.type.compareTo("R") == 0 && ob.readCache(ob.path, ob.offset, ob.length) == 1)
 			{
 				continue;
 			}
 				
+			
+			
 			// Marshal and send request to the server (server port assumed to be 2222)
 			try {
 				ob.aSocket = new DatagramSocket();
@@ -289,7 +319,7 @@ public class Client {
 				{
 					// Packet drop simulation
 					int n = rand.nextInt(10);
-					if( n <= 8 )
+					if( n > 1 )
 					{
 						ob.aSocket.send(request);
 					}
@@ -308,10 +338,13 @@ public class Client {
    					}
 				}
 				
-				//check request type and if marshal request was successful
-				if (ob.type.compareTo("M") == 0 && unmarshal(buffer).charAt(5)=='T') { //check if monitor request was successful
-					// Handle response to monitor requests differently,
-					// prepare for receiving file updates from server.
+				
+				//RESPONSE HANDLING
+				// Handle response to monitor requests differently,
+				// prepare for receiving file updates from server.
+				//check monitor type and if marshal request was successful
+				if (ob.type.compareTo("M") == 0 && unmarshal(buffer).charAt(5)=='T') { 
+					
 													
 					Date startTime = new Date();
 					System.out.println("Monitoring for updates...");
@@ -349,6 +382,7 @@ public class Client {
 							
 					}
 				}
+				
 				else{
 					// If not monitor request
 					String answer = unmarshal(buffer);
@@ -376,6 +410,8 @@ public class Client {
 		}
 	}
 
+	
+	
 	public static String unmarshal(byte[] buffer)
 	{
 		// Convert the received byte array to string
@@ -389,6 +425,8 @@ public class Client {
 
 		return new String(bytes);		
 	}
+	
+	
 	
 	public static byte[] marshal(Client ob) {
 
