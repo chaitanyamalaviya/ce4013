@@ -78,7 +78,11 @@ public class Server extends Thread {
 				switch (ob.type.toUpperCase()) {
 				
 					case "R":
-						ob.result = getFileData(ob) + getLastModifiedTime(ob.path).toString();
+						String readOut = getFileData(ob);
+						if (!readOut.equals("File Doesn't Exist!"))
+							ob.result = readOut + getLastModifiedTime(ob.path).toString();
+						else
+							ob.result = readOut;
 						//Append last modified time for client-side cache implementation
 						break;
 					
@@ -113,7 +117,7 @@ public class Server extends Thread {
 						break;
 					}
 
-				//System.out.println(ob.result);
+				System.out.println(ob.result);
 				byte[] res = (String.format("%04d", ob.result.length())+ob.result).getBytes();
 				//Result is preceded by 4-digit result length and marshalled
 				
@@ -156,8 +160,8 @@ public class Server extends Thread {
 		//System.out.println(ob.path);
 		int size = ob.length;
 		byte[] bs = new byte[size];
-
-
+		if (!(new File(ob.path).exists()))
+			return "File Doesn't Exist!";
 		RandomAccessFile in = null;
 		try {
 			//Create random access file stream
@@ -171,15 +175,17 @@ public class Server extends Thread {
 		}
 
 		catch (Exception e) {
+			
 			System.out.println("Error: IOException thrown in getFileData");
 			System.out.println(e.getMessage());
+			
 		}
 
 		if (in != null) {
 			in.close();
 		}
 
-		return "";
+		return "F";
 	}
 	
 

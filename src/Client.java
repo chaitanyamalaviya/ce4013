@@ -219,9 +219,6 @@ public class Client {
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
 				fs = new File(ob.path);
-				if (!fs.exists()){
-					System.out.println("Invalid path!\nTry again!");
-					continue;}
 				System.out.println("Please enter the offset:");
 				ob.offset = reader.nextInt();
 				System.out.println("Please enter the length:");
@@ -233,9 +230,6 @@ public class Client {
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
 				fs = new File(ob.path);
-				if (!fs.exists()){
-					System.out.println("Invalid path!\nTry again!");
-					continue;}
 				System.out.println("Please enter the offset:");
 				ob.offset = reader.nextInt();
 				System.out.println("Please enter the data:");
@@ -247,9 +241,6 @@ public class Client {
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
 				fs = new File(ob.path);
-				if (!fs.exists()){
-					System.out.println("Invalid path!\nTry again!");
-					continue;}
 				System.out.println("Are you sure you want to delete the file?(Y/N)");
 				if (reader.next().toUpperCase().equals("Y"))
 					break;
@@ -261,9 +252,6 @@ public class Client {
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
 				fs = new File(ob.path);
-				if (!fs.exists()){
-					System.out.println("Invalid path!\nTry again!");
-					continue;}
 				System.out.println("Please enter the monitor interval in seconds:");
 				ob.monitorInterval = reader.nextInt();
 				break;
@@ -273,9 +261,6 @@ public class Client {
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
 				fs = new File(ob.path);
-				if (!fs.exists()){
-					System.out.println("Invalid path!\nTry again!");
-					continue;}
 				System.out.println("Please enter the destination folder:");
 				ob.destPath = reader.next();
 				fs = new File(ob.destPath);
@@ -343,7 +328,8 @@ public class Client {
 				// Handle response to monitor requests differently,
 				// prepare for receiving file updates from server.
 				//check monitor type and if marshal request was successful
-				if (ob.type.compareTo("M") == 0 && unmarshal(buffer).charAt(5)=='T') { 
+				//System.out.println("Mfail"+unmarshal(buffer));
+				if (ob.type.compareTo("M") == 0 && unmarshal(buffer).substring(5,6).compareTo("T")==0) { 
 					
 													
 					Date startTime = new Date();
@@ -386,16 +372,16 @@ public class Client {
 				else{
 					// If not monitor request
 					String answer = unmarshal(buffer);
-					
 					int length = Integer.parseInt(answer.substring(0,4));
-					if (ob.type.compareTo("R") == 0)
+					if (ob.type.compareTo("R") == 0 && !answer.substring(4,length+4).equals("File Doesn't Exist!"))
 						System.out.println("Reply data:" + answer.substring(4,length-9));
 					else
 						System.out.println("Reply data:" + answer.substring(4,length+4));
 
 					// If a read request was made to the server, the cache needs to be updated
 					// with the response.
-					if(ob.type.compareTo("R") == 0)
+					//System.out.println("CharRfail:"+answer);
+					if(ob.type.compareTo("R") == 0 && !answer.substring(5,6).equals("F"))
 					{
 						Date Tmserver = new Date(Long.parseLong(answer.substring(length-9, length + 4)));
 						ob.updateCache(ob.path, answer.substring(4,length-9), ob.offset, ob.length, Tmserver);
