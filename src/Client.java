@@ -295,7 +295,7 @@ public class Client {
 			try {
 				ob.aSocket = new DatagramSocket();
 				byte[] clientRequest = marshal(ob);
-				System.out.println("Req:" + clientRequest);
+				System.out.println("Marshalled Request:" + clientRequest);
 				// out = new ObjectOutputStream(bos);
 				// out.writeObject(ob);
 				// byte[] clientRequest = bos.toByteArray();

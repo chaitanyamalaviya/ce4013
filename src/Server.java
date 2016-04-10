@@ -79,9 +79,11 @@ public class Server extends Thread {
 
 					case "R":
 						String readOut = getFileData(ob);
-						if (!readOut.equals("File Doesn't Exist!") && !readOut.isEmpty())
+						
+						if (!readOut.equals("File Doesn't Exist!") && !readOut.isEmpty() && readOut.trim().length()>0)
 							ob.result = readOut + getLastModifiedTime(ob.path).toString();
-						else if (readOut.isEmpty())
+						
+						else if (readOut.isEmpty() || readOut.trim().length()==0)
 							ob.result = "F";
 						else
 							ob.result = readOut;
