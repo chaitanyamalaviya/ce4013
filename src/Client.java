@@ -1,7 +1,7 @@
 import java.net.*;
 import java.io.*;
 import java.nio.*;
-import java.nio.file.Paths;
+import java.io.File;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -72,7 +72,7 @@ public class Client {
 			// Check if the path names are the same
 			if(cache2.path.compareTo(path) != 0)
 			{
-				System.out.println("path mismatch");
+				//System.out.println("path mismatch");
 				continue;
 			}
 			
@@ -211,6 +211,8 @@ public class Client {
 			System.out.println("5. Make a copy of the file ");
 			System.out.println("6. Exit");
 			System.out.println("Please enter your choice (1-6):");
+			
+			try{
 			op = reader.nextInt();
 			switch (op) {
 			// Get other request parameters based on request type
@@ -218,10 +220,9 @@ public class Client {
 				ob.type = "R";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
-				fs = new File(ob.path);
-				if (!fs.exists()){
-					System.out.println("Invalid path!\nTry again!");
-					continue;}
+				//if (!fs.exists()){
+				//	System.out.println("Invalid path!\nTry again!");
+				//	continue;}
 				System.out.println("Please enter the offset:");
 				ob.offset = reader.nextInt();
 				System.out.println("Please enter the length:");
@@ -287,6 +288,13 @@ public class Client {
 			case 6:
 				System.out.println("Goodbye!");
 				return;
+			}
+			}
+			catch(InputMismatchException e)
+			{
+				System.out.println("Input mismatch");
+				reader.next();
+				continue;
 			}
 
 			
