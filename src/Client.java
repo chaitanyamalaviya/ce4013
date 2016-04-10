@@ -1,7 +1,7 @@
 import java.net.*;
 import java.io.*;
 import java.nio.*;
-import java.nio.file.Paths;
+import java.io.File;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -72,7 +72,7 @@ public class Client {
 			// Check if the path names are the same
 			if(cache2.path.compareTo(path) != 0)
 			{
-				System.out.println("path mismatch");
+				//System.out.println("path mismatch");
 				continue;
 			}
 			
@@ -211,6 +211,8 @@ public class Client {
 			System.out.println("5. Make a copy of the file ");
 			System.out.println("6. Exit");
 			System.out.println("Please enter your choice (1-6):");
+			
+			try{
 			op = reader.nextInt();
 			switch (op) {
 			// Get other request parameters based on request type
@@ -218,7 +220,6 @@ public class Client {
 				ob.type = "R";
 				System.out.println("Please enter the file path:");
 				ob.path = reader.next();
-				fs = new File(ob.path);
 				System.out.println("Please enter the offset:");
 				ob.offset = reader.nextInt();
 				System.out.println("Please enter the length:");
@@ -272,6 +273,13 @@ public class Client {
 			case 6:
 				System.out.println("Goodbye!");
 				return;
+			}
+			}
+			catch(InputMismatchException e)
+			{
+				System.out.println("Input mismatch");
+				reader.next();
+				continue;
 			}
 
 			
@@ -329,7 +337,7 @@ public class Client {
 				// prepare for receiving file updates from server.
 				//check monitor type and if marshal request was successful
 				//System.out.println("Mfail"+unmarshal(buffer));
-				if (ob.type.compareTo("M") == 0 && unmarshal(buffer).substring(5,6).compareTo("T")==0) { 
+				if (ob.type.compareTo("M") == 0 && unmarshal(buffer).substring(4,5).compareTo("T")==0) { 
 					
 													
 					Date startTime = new Date();
@@ -372,16 +380,17 @@ public class Client {
 				else{
 					// If not monitor request
 					String answer = unmarshal(buffer);
+					//System.out.println("Ans:"+answer);
 					int length = Integer.parseInt(answer.substring(0,4));
-					if (ob.type.compareTo("R") == 0 && !answer.substring(4,length+4).equals("File Doesn't Exist!"))
+					if (ob.type.compareTo("R") == 0 && !answer.substring(4,length+4).equals("File Doesn't Exist!") && !answer.substring(4,5).equals("F"))
 						System.out.println("Reply data:" + answer.substring(4,length-9));
 					else
 						System.out.println("Reply data:" + answer.substring(4,length+4));
 
 					// If a read request was made to the server, the cache needs to be updated
 					// with the response.
-					//System.out.println("CharRfail:"+answer);
-					if(ob.type.compareTo("R") == 0 && !answer.substring(5,6).equals("F"))
+					
+					if(ob.type.compareTo("R") == 0 && !answer.substring(4,5).equals("F"))
 					{
 						Date Tmserver = new Date(Long.parseLong(answer.substring(length-9, length + 4)));
 						ob.updateCache(ob.path, answer.substring(4,length-9), ob.offset, ob.length, Tmserver);
